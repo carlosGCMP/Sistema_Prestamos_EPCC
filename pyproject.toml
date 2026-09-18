@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sistema-prestamos-epcc"
+version = "0.1.0"
+description = "API para la gestión de préstamos de bienes de la EPCC"
+requires-python = ">=3.13"
+dependencies = [
+  "alembic>=1.14",
+  "fastapi>=0.115",
+  "psycopg[binary]>=3.2",
+  "pydantic-settings>=2.7",
+  "sqlalchemy>=2.0",
+  "uvicorn[standard]>=0.34",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28",
+  "mypy>=1.14",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.9",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+packages = ["app"]
