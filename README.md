@@ -25,6 +25,7 @@ La API quedará disponible en `http://localhost:8000` y su contrato navegable en
 - [Arquitectura y tecnologías](docs/02-arquitectura-y-tecnologias.md)
 - [Modelo de dominio y módulos](docs/03-dominio-y-modulos.md)
 - [Plan de implementación](docs/04-plan-de-implementacion.md)
+- [Incremento inicial (10 %)](docs/05-incremento-inicial-10-porciento.md)
 - [Decisiones de arquitectura](docs/adr/README.md)
 
 ## Estado
