@@ -176,15 +176,16 @@ def figure_header(draw: ImageDraw.ImageDraw, title: str, subtitle: str) -> None:
 def draw_domain(path: Path) -> None:
     image = Image.new("RGB", (3200, 2000), f"#{PAPER}")
     draw = ImageDraw.Draw(image)
-    figure_header(draw, "Modelo de Dominio", "Clases y asociaciones presentes en el esquema SQL proporcionado")
+    figure_header(draw, "Modelo de dominio", "Vista parcial: clases y asociaciones definidas en el esquema SQL recibido")
 
     # Associations are drawn before the class boxes so lines stay behind class borders.
-    route(draw, [(430, 590), (430, 980)], "cuenta", (455, 770), "1", "0..1")
-    route(draw, [(780, 390), (1000, 390)], "solicitante", (800, 325), "1", "0..*")
-    route(draw, [(2570, 430), (2570, 600)], "", (0, 0), "1", "0..*")
-    route(draw, [(2570, 860), (2570, 1030)], "", (0, 0), "1", "0..*")
-    route(draw, [(2570, 1290), (2570, 1460)], "", (0, 0), "1", "0..*")
-    route(draw, [(780, 540), (850, 650), (850, 1160), (970, 1160)], "persona", (855, 850), "1", "0..*")
+    route(draw, [(430, 590), (430, 980)], "cuenta", (455, 770), "0..1", "1")
+    route(draw, [(780, 390), (1000, 390)], "solicitante", (800, 325), "0..*", "1")
+    route(draw, [(2570, 430), (2570, 600)], "clasifica", (2600, 480), "1", "0..*")
+    route(draw, [(2570, 860), (2570, 1030)], "agrupa", (2600, 905), "1", "0..*")
+    route(draw, [(2570, 1290), (2570, 1460)], "se concreta en", (2600, 1310), "1", "0..*")
+    route(draw, [(780, 490), (850, 620), (850, 1160), (970, 1160)], "solicitante", (855, 850), "0..*", "1")
+    route(draw, [(780, 570), (810, 690), (810, 1400), (970, 1400)], "administrador", (820, 730), "0..*", "1")
     route(draw, [(1500, 660), (1500, 820), (900, 820), (900, 1040), (970, 1040)], "reserva origen", (1120, 790), "0..1", "0..1")
     route(draw, [(1670, 530), (1900, 530), (1900, 1500), (2140, 1500)], "unidad", (1735, 480), "0..*", "1")
     route(draw, [(1670, 1170), (2020, 1170), (2020, 1570), (2140, 1570)], "unidad", (1760, 1120), "0..*", "1")
@@ -206,13 +207,13 @@ def draw_domain(path: Path) -> None:
         "idUnidad: UUID", "codigoInventario: String", "numeroSerie, ubicacion", "condicionFisica, accesorios", "estado: EstadoUnidad",
     ], ["estaDisponible()"])
     class_box(draw, (970, 980, 700, 500), "Prestamo", [
-        "idPrestamo: UUID", "plazoInicio, plazoVencimiento", "estado, modalidad", "datos de entrega y devolucion",
+        "idPrestamo: UUID", "plazoInicio, plazoVencimiento", "estado, modalidad", "datos de entrega y devolución",
     ], ["registrarEntrega()  registrarDevolucion()"])
     class_box(draw, (970, 1590, 700, 300), "Renovacion", [
         "idRenovacion: UUID", "secuencia: Integer", "vencimientos anterior y nuevo", "administrador, fechaAutorizacion",
     ])
 
-    draw.text((90, 1945), "Persona participa como solicitante y administrador; las relaciones siguen las claves foraneas del SQL.", font=font(27), fill=f"#{MUTED}")
+    draw.text((90, 1945), "Persona puede actuar como solicitante o administrador. Multiplicidades derivadas de las claves foráneas del SQL.", font=font(27), fill=f"#{MUTED}")
     image.save(path, dpi=(300, 300))
 
 
@@ -240,7 +241,7 @@ def package_box(
 def draw_architecture(path: Path) -> None:
     image = Image.new("RGB", (3200, 2000), f"#{PAPER}")
     draw = ImageDraw.Draw(image)
-    figure_header(draw, "Arquitectura en Capas", "Paquetes, clases representativas y direccion de dependencias")
+    figure_header(draw, "Arquitectura en capas", "Paquetes, clases representativas y dirección de dependencias")
     boxes = [
         (70, 210, 700, 1390),
         (850, 210, 750, 1390),
@@ -253,13 +254,13 @@ def draw_architecture(path: Path) -> None:
     route(draw, [(2520, 1120), (2460, 1120)], "", (0, 0), dashed=True)
     route(draw, [(2825, 1600), (2825, 1740)], "SQL", (2845, 1645))
 
-    package_box(draw, boxes[0], "Presentacion", [
+    package_box(draw, boxes[0], "Presentación", [
         ("api.auth", ["AuthRouter", "TokenSchema"]),
         ("api.inventory", ["InventoryRouter", "CreateUnitSchema"]),
         ("api.reservations", ["ReservationRouter"]),
         ("api.loans", ["LoanRouter", "ReturnSchema"]),
     ])
-    package_box(draw, boxes[1], "Aplicacion", [
+    package_box(draw, boxes[1], "Aplicación", [
         ("use_cases", ["AuthenticateUser", "CreateUnit", "CreateReservation", "RegisterLoan", "RecordReturn"]),
         ("ports", ["UnitRepository", "LoanRepository", "UnitOfWork", "PasswordHasher"]),
         ("dto", ["Commands and results"]),
@@ -441,11 +442,11 @@ def setup_document() -> Document:
         title._element.rPr.insert(0, title_rfonts)
     title_rfonts.set(qn("w:ascii"), "Arial")
     title_rfonts.set(qn("w:hAnsi"), "Arial")
-    title.font.size = Pt(27)
+    title.font.size = Pt(21)
     title.font.bold = True
     title.font.color.rgb = RGBColor.from_string("000000")
-    title.paragraph_format.space_before = Pt(72)
-    title.paragraph_format.space_after = Pt(18)
+    title.paragraph_format.space_before = Pt(0)
+    title.paragraph_format.space_after = Pt(8)
     title.paragraph_format.keep_with_next = True
     title_ppr = title._element.get_or_add_pPr()
     title_border = title_ppr.find(qn("w:pBdr"))
@@ -465,7 +466,7 @@ def setup_document() -> Document:
         styles["Caption"].paragraph_format.space_before = Pt(7)
         styles["Caption"].paragraph_format.space_after = Pt(4)
 
-    doc.core_properties.title = "Sistema de gestión de préstamos de bienes de la EPCC"
+    doc.core_properties.title = "Análisis y diseño inicial del sistema de préstamos de bienes EPCC"
     doc.core_properties.subject = "Informe para el primer examen"
     doc.core_properties.author = ""
     doc.core_properties.keywords = "EPCC, requisitos, modelo de dominio, UML, arquitectura en capas"
@@ -590,10 +591,6 @@ def create_report() -> None:
 
         lines = SOURCE.read_text(encoding="utf-8").splitlines()
         i = 0
-        cover_title_added = False
-        cover_subtitle = False
-        cover_meta = False
-        cover_open = True
         while i < len(lines):
             line = lines[i].rstrip()
             stripped = line.strip()
@@ -602,16 +599,6 @@ def create_report() -> None:
                 continue
             if stripped == "{{PAGEBREAK}}":
                 doc.add_page_break()
-                cover_open = False
-                cover_meta = False
-                i += 1
-                continue
-            if stripped == "{{COVER_SUBTITLE}}":
-                cover_subtitle = True
-                i += 1
-                continue
-            if stripped == "{{COVER_META}}":
-                cover_meta = True
                 i += 1
                 continue
             if stripped.startswith("{{FIGURE:"):
@@ -635,15 +622,14 @@ def create_report() -> None:
             if heading_match:
                 level = len(heading_match.group(1))
                 heading_text = heading_match.group(2)
-                if level == 1 and not cover_title_added:
+                if level == 1 and not doc.paragraphs:
                     paragraph = doc.add_paragraph(style="Title")
-                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     ppr = paragraph._p.get_or_add_pPr()
                     border = ppr.find(qn("w:pBdr"))
                     if border is not None:
                         ppr.remove(border)
                     add_inline(paragraph, heading_text)
-                    cover_title_added = True
                 else:
                     paragraph = doc.add_paragraph(style=f"Heading {min(level, 3)}")
                     add_inline(paragraph, heading_text)
@@ -656,36 +642,6 @@ def create_report() -> None:
                 paragraph = doc.add_paragraph(style=style_name)
                 paragraph.paragraph_format.space_after = Pt(3)
                 add_inline(paragraph, body)
-                i += 1
-                continue
-
-            if cover_subtitle and not cover_meta:
-                paragraph = doc.add_paragraph()
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                paragraph.paragraph_format.space_after = Pt(26)
-                add_inline(paragraph, stripped)
-                for run in paragraph.runs:
-                    set_run_font(run, size=16, color="000000")
-                cover_subtitle = False
-                i += 1
-                continue
-            if cover_meta:
-                paragraph = doc.add_paragraph()
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                paragraph.paragraph_format.space_after = Pt(6)
-                add_inline(paragraph, stripped)
-                for run in paragraph.runs:
-                    set_run_font(run, size=11, color=MUTED)
-                i += 1
-                continue
-
-            if cover_open:
-                paragraph = doc.add_paragraph()
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                paragraph.paragraph_format.space_after = Pt(8)
-                add_inline(paragraph, stripped)
-                for run in paragraph.runs:
-                    set_run_font(run, size=12, color=INK)
                 i += 1
                 continue
 
