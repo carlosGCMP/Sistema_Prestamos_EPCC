@@ -16,7 +16,7 @@ from reportlab.pdfgen import canvas
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = Path.home() / "Documents" / "informe_prestamos_epcc.pdf"
-DEFAULT_OUTPUT = ROOT / "docs" / "entregables" / "informe_prestamos_epcc_mismo_diseno.pdf"
+DEFAULT_OUTPUT = ROOT / "docs" / "entregables" / "informe-primer-examen.pdf"
 
 BLUE = colors.HexColor("#245AA2")
 INK = colors.HexColor("#202A37")

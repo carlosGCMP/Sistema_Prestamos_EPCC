@@ -26,9 +26,7 @@ La API quedará disponible en `http://localhost:8000` y su contrato navegable en
 - [Modelo de dominio y módulos](docs/03-dominio-y-modulos.md)
 - [Plan de implementación](docs/04-plan-de-implementacion.md)
 - [Incremento inicial (10 %)](docs/05-incremento-inicial-10-porciento.md)
-- [Informe para el primer examen](docs/informe-primer-examen.md)
-- [Informe en Word](docs/entregables/informe-primer-examen.docx)
-- [Diagramas del primer examen revisados](docs/entregables/diagramas-examen1-revisados.pdf)
+- [Informe presentable del primer examen](docs/entregables/informe-primer-examen.pdf)
 - [Decisiones de arquitectura](docs/adr/README.md)
 
 ## Estado
