@@ -28,6 +28,7 @@ La API quedará disponible en `http://localhost:8000` y su contrato navegable en
 - [Incremento inicial (10 %)](docs/05-incremento-inicial-10-porciento.md)
 - [Informe para el primer examen](docs/informe-primer-examen.md)
 - [Informe en Word](docs/entregables/informe-primer-examen.docx)
+- [Diagramas del primer examen revisados](docs/entregables/diagramas-examen1-revisados.pdf)
 - [Decisiones de arquitectura](docs/adr/README.md)
 
 ## Estado

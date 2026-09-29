@@ -184,8 +184,7 @@ def draw_domain(path: Path) -> None:
     route(draw, [(2570, 430), (2570, 600)], "clasifica", (2600, 480), "1", "0..*")
     route(draw, [(2570, 860), (2570, 1030)], "agrupa", (2600, 905), "1", "0..*")
     route(draw, [(2570, 1290), (2570, 1460)], "se concreta en", (2600, 1310), "1", "0..*")
-    route(draw, [(780, 490), (850, 620), (850, 1160), (970, 1160)], "solicitante", (855, 850), "0..*", "1")
-    route(draw, [(780, 570), (810, 690), (810, 1400), (970, 1400)], "administrador", (820, 730), "0..*", "1")
+    route(draw, [(780, 540), (850, 650), (850, 1160), (970, 1160)], "participa (dos roles)", (855, 850), "0..*", "1")
     route(draw, [(1500, 660), (1500, 820), (900, 820), (900, 1040), (970, 1040)], "reserva origen", (1120, 790), "0..1", "0..1")
     route(draw, [(1670, 530), (1900, 530), (1900, 1500), (2140, 1500)], "unidad", (1735, 480), "0..*", "1")
     route(draw, [(1670, 1170), (2020, 1170), (2020, 1570), (2140, 1570)], "unidad", (1760, 1120), "0..*", "1")
@@ -207,13 +206,13 @@ def draw_domain(path: Path) -> None:
         "idUnidad: UUID", "codigoInventario: String", "numeroSerie, ubicacion", "condicionFisica, accesorios", "estado: EstadoUnidad",
     ], ["estaDisponible()"])
     class_box(draw, (970, 980, 700, 500), "Prestamo", [
-        "idPrestamo: UUID", "plazoInicio, plazoVencimiento", "estado, modalidad", "datos de entrega y devolución",
+        "idPrestamo: UUID", "solicitante, administrador", "plazoInicio, plazoVencimiento", "estado y datos de entrega/devolución",
     ], ["registrarEntrega()  registrarDevolucion()"])
     class_box(draw, (970, 1590, 700, 300), "Renovacion", [
         "idRenovacion: UUID", "secuencia: Integer", "vencimientos anterior y nuevo", "administrador, fechaAutorizacion",
     ])
 
-    draw.text((90, 1945), "Persona puede actuar como solicitante o administrador. Multiplicidades derivadas de las claves foráneas del SQL.", font=font(27), fill=f"#{MUTED}")
+    draw.text((90, 1945), "Prestamo conserva dos referencias a Persona: solicitante y administrador. Multiplicidades derivadas del SQL.", font=font(27), fill=f"#{MUTED}")
     image.save(path, dpi=(300, 300))
 
 
