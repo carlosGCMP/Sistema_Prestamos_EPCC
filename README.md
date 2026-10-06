@@ -14,6 +14,8 @@ docker compose up -d db
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
+alembic upgrade head
+python -m app.bootstrap_admin
 uvicorn app.main:app --reload
 ```
 
@@ -26,9 +28,10 @@ La API quedará disponible en `http://localhost:8000` y su contrato navegable en
 - [Modelo de dominio y módulos](docs/03-dominio-y-modulos.md)
 - [Plan de implementación](docs/04-plan-de-implementacion.md)
 - [Incremento inicial (10 %)](docs/05-incremento-inicial-10-porciento.md)
+- [Incremento funcional (25 %)](docs/06-incremento-funcional-25-porciento.md)
 - [Informe presentable del primer examen](docs/entregables/informe-primer-examen.pdf)
 - [Decisiones de arquitectura](docs/adr/README.md)
 
 ## Estado
 
-Se ha creado la base técnica y documental. El siguiente incremento implementará identidad y acceso, y el catálogo de inventario mínimo necesario para habilitar préstamos.
+El incremento funcional del 25 % implementa identidad local, catálogo e inventario, políticas versionadas, reservas, entrega/renovación/devolución de préstamos, auditoría y migración inicial. Garantías, incidencias, sanciones, apelaciones, integración académica institucional e interfaz web quedan fuera de este corte.
