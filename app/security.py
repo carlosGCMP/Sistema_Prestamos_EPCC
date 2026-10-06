@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
@@ -71,7 +72,7 @@ def get_current_account(
     return account
 
 
-def require_roles(*roles: Role):
+def require_roles(*roles: Role) -> Callable[..., Person]:
     def dependency(
         account: Annotated[Account, Depends(get_current_account)],
     ) -> Person:

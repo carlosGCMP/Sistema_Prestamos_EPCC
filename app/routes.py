@@ -2,11 +2,13 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from starlette.requests import Request
 
 from app.application.use_cases import (
     UseCaseError,
@@ -308,15 +310,13 @@ def list_audit(
     )
 
 
-def install_error_handlers(app) -> None:  # type: ignore[no-untyped-def]
-    from fastapi.responses import JSONResponse
-
+def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(UseCaseError)
-    async def use_case_error_handler(_request, error: UseCaseError):  # type: ignore[no-untyped-def]
+    async def use_case_error_handler(_request: Request, error: UseCaseError) -> JSONResponse:
         return JSONResponse(status_code=error.status_code, content={"detail": error.detail})
 
     @app.exception_handler(IntegrityError)
-    async def integrity_error_handler(_request, _error: IntegrityError):  # type: ignore[no-untyped-def]
+    async def integrity_error_handler(_request: Request, _error: IntegrityError) -> JSONResponse:
         return JSONResponse(
             status_code=409,
             content={"detail": "La operación viola una regla de unicidad o integridad"},
