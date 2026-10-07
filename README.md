@@ -8,7 +8,7 @@ El repositorio contiene un primer incremento funcional de backend, estimado como
 
 Incluye autenticación local, catálogo e inventario, políticas versionadas, reservas, entrega/renovación/devolución, auditoría, migraciones y una API OpenAPI. Garantías, incidencias, sanciones, apelaciones, integración institucional, interfaz web y despliegue productivo aún no están implementados.
 
-La verificación local registrada es: 7 pruebas aprobadas, Ruff sin errores, mypy sin errores en 11 módulos y migración aplicada en PostgreSQL 16. La CI de GitHub aún no está activa: el issue [#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) sigue abierto porque la credencial actual no puede publicar workflows.
+La verificación local registrada es: 7 pruebas aprobadas, Ruff sin errores, formato revisado en 33 archivos, mypy sin errores en 14 archivos fuente y migración aplicada en PostgreSQL 16. La CI de GitHub aún no está activa: el issue [#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) sigue abierto porque la credencial actual no puede publicar workflows.
 
 ## Tecnologías
 
@@ -39,7 +39,13 @@ Para detener la API, usa `Ctrl+C`. Para detener PostgreSQL conservando los datos
 ## Estructura
 
 ```text
-app/                 API, casos de uso, modelos, seguridad y configuración
+app/
+  api/               Rutas HTTP y composición de la API
+  application/       Casos de uso y esquemas de entrada/salida
+  core/              Seguridad y configuración transversal
+  infrastructure/    Persistencia SQLAlchemy y modelos ORM
+  main.py            Construcción de la aplicación FastAPI
+  bootstrap_admin.py Alta interactiva del primer administrador
 migrations/          Historial versionado del esquema PostgreSQL
 tests/               Pruebas automatizadas de API y reglas del dominio
 docs/                Arquitectura, planificación, operación y entregables
@@ -49,7 +55,7 @@ docs/                Arquitectura, planificación, operación y entregables
 scripts/             Herramientas auxiliares para documentos
 ```
 
-El código conserva una estructura pequeña para el incremento actual. La separación interna más granular por contextos delimitados es una evolución futura; no se deben interpretar todos los paquetes del diagrama objetivo como ya implementados.
+La separación actual es técnica y aún no divide las reglas por cada contexto delimitado. Los modelos ORM y parte de la lógica de aplicación conservan acoplamientos que se reducirán gradualmente; no se deben interpretar todos los módulos del diagrama de dominio como ya implementados.
 
 ## Documentación
 

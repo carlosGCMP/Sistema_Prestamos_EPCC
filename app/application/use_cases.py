@@ -6,7 +6,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import (
+from app.application.schemas import PersonCreate, PolicyCreate
+from app.core.security import hash_password
+from app.infrastructure.models import (
     AcademicRecord,
     Account,
     AuditEvent,
@@ -28,8 +30,6 @@ from app.models import (
     TimeUnit,
     UnitState,
 )
-from app.schemas import PersonCreate, PolicyCreate
-from app.security import hash_password
 
 
 class UseCaseError(Exception):

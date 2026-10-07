@@ -2,8 +2,8 @@ from datetime import date
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.models import Account, Person, Role
-from app.security import hash_password
+from app.core.security import hash_password
+from app.infrastructure.models import Account, Person, Role
 
 
 def test_health_and_openapi(client) -> None:  # type: ignore[no-untyped-def]

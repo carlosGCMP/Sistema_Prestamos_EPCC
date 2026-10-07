@@ -2,8 +2,8 @@ from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.models import Account, Person, Role
-from app.security import hash_password
+from app.core.security import hash_password
+from app.infrastructure.models import Account, Person, Role
 
 
 def test_policy_reservation_loan_renewal_and_return(

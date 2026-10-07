@@ -5,7 +5,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models import LoanState, PersonState, ReservationState, Role, TimeUnit, UnitState, UseMode
+from app.infrastructure.models import (
+    LoanState,
+    PersonState,
+    ReservationState,
+    Role,
+    TimeUnit,
+    UnitState,
+    UseMode,
+)
 
 
 class ORMModel(BaseModel):

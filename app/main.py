@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import engine
-from app.routes import install_error_handlers, router
+from app.api.routes import install_error_handlers, router
+from app.infrastructure.database import engine
 
 app = FastAPI(
     title="Sistema de Préstamos EPCC",

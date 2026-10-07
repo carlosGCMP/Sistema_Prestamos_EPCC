@@ -10,9 +10,9 @@ from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.database import get_session
-from app.models import Account, Person, PersonState, Role
-from app.settings import get_settings
+from app.core.settings import get_settings
+from app.infrastructure.database import get_session
+from app.infrastructure.models import Account, Person, PersonState, Role
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")

@@ -35,7 +35,9 @@ FastAPI ──┼── módulos de aplicación ── dominio
 
 La primera fase entrega una API documentada para validar reglas de negocio. Para el panel web se recomienda **React + TypeScript + Vite**, consumiendo OpenAPI; no se debe iniciar hasta estabilizar los flujos de catálogo y préstamo. Si el equipo prefiere reducir la superficie tecnológica, una interfaz administrativa renderizada en servidor es una alternativa válida que deberá decidirse antes de esa fase.
 
-## Estructura de código objetivo
+## Estructura de código objetivo por contexto
+
+La estructura ya creada en el incremento actual agrupa los módulos por responsabilidad técnica (`api`, `application`, `core`, `infrastructure`). La estructura siguiente es el objetivo posterior para aislar cada contexto delimitado; no está implementada todavía y no se debe confundir con los directorios presentes actualmente.
 
 ```text
 app/

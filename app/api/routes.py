@@ -10,40 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
-from app.application.use_cases import (
-    UseCaseError,
-    audit,
-    cancel_reservation,
-    create_loan,
-    create_person,
-    create_policy,
-    create_reservation,
-    decide_reservation,
-    new_category,
-    new_item,
-    new_item_type,
-    new_unit,
-    renew_loan,
-    return_loan,
-)
-from app.database import get_session
-from app.models import (
-    Account,
-    AuditEvent,
-    Category,
-    ItemCard,
-    ItemType,
-    Loan,
-    LoanPolicy,
-    Person,
-    PersonState,
-    PhysicalUnit,
-    Renewal,
-    Reservation,
-    Role,
-    UnitState,
-)
-from app.schemas import (
+from app.application.schemas import (
     AuditOut,
     CategoryCreate,
     CategoryOut,
@@ -67,14 +34,47 @@ from app.schemas import (
     UnitCreate,
     UnitOut,
 )
-from app.security import (
+from app.application.use_cases import (
+    UseCaseError,
+    audit,
+    cancel_reservation,
+    create_loan,
+    create_person,
+    create_policy,
+    create_reservation,
+    decide_reservation,
+    new_category,
+    new_item,
+    new_item_type,
+    new_unit,
+    renew_loan,
+    return_loan,
+)
+from app.core.security import (
     AdminActor,
     CurrentAccount,
     MemberActor,
     create_access_token,
     verify_password,
 )
-from app.settings import get_settings
+from app.core.settings import get_settings
+from app.infrastructure.database import get_session
+from app.infrastructure.models import (
+    Account,
+    AuditEvent,
+    Category,
+    ItemCard,
+    ItemType,
+    Loan,
+    LoanPolicy,
+    Person,
+    PersonState,
+    PhysicalUnit,
+    Renewal,
+    Reservation,
+    Role,
+    UnitState,
+)
 
 router = APIRouter()
 SessionDep = Annotated[Session, Depends(get_session)]

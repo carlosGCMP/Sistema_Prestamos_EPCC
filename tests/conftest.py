@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.models  # noqa: F401
-from app.database import Base, get_session
+import app.infrastructure.models  # noqa: F401
+from app.infrastructure.database import Base, get_session
 from app.main import app as api
 
 

@@ -5,9 +5,9 @@ from getpass import getpass
 
 from sqlalchemy import select
 
-from app.database import SessionLocal
-from app.models import Account, Person, Role
-from app.security import hash_password
+from app.core.security import hash_password
+from app.infrastructure.database import SessionLocal
+from app.infrastructure.models import Account, Person, Role
 
 
 def main() -> None:

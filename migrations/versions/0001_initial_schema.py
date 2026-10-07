@@ -6,8 +6,8 @@ Revises:
 
 from alembic import op
 
-import app.models  # noqa: F401
-from app.database import Base
+import app.infrastructure.models  # noqa: F401
+from app.infrastructure.database import Base
 
 revision = "0001_initial"
 down_revision = None

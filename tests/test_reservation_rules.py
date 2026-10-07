@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.application.use_cases import UseCaseError, ensure_no_unit_conflict
-from app.models import (
+from app.infrastructure.models import (
     Category,
     ItemCard,
     ItemType,
