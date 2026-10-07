@@ -22,7 +22,9 @@ Garantías, incidencias, sanciones/apelaciones, integración con matrícula o di
 
 ## Verificación y limitaciones
 
-Las pruebas locales usan SQLite en memoria para validar API, autenticación y ciclo de dependencias. La base productiva objetivo sigue siendo PostgreSQL; antes de integrar a `main` debe ejecutarse `alembic upgrade head` y la suite de integración con PostgreSQL 16 mediante Docker Compose. La máquina donde se realizó este incremento no tenía activo el daemon Docker, así que esa comprobación queda pendiente.
+La verificación ejecutada en el entorno de desarrollo incluye Python 3.13.15, PostgreSQL 16 en Docker Compose, `alembic upgrade head`, 6 pruebas automatizadas, Ruff y mypy. Además, se recorrió manualmente la API conectada a PostgreSQL para registrar persona e inventario, crear política, solicitar/confirmar/cancelar una reserva y realizar entrega, renovación, devolución y consulta de auditoría. La prueba terminó con el préstamo en estado `DEVUELTO` y 12 eventos auditados.
+
+Las seis pruebas del proyecto usan SQLite en memoria; la migración y la demostración manual sí se ejecutaron contra PostgreSQL. No se ejecutaron pruebas de carga ni se verificó una instalación productiva. No se debe interpretar este 25 % como un sistema terminado.
 
 ## Puesta en marcha
 
@@ -41,4 +43,4 @@ OpenAPI: `http://localhost:8000/docs`. Estado de proceso: `/health`; disponibili
 
 ## Siguiente corte sugerido
 
-Probar migraciones y flujo completo en PostgreSQL 16; implementar vencimiento automático y reportes operativos; formalizar reglas de mora y garantizar que las transiciones de estado, cupos y reservas reflejen los acuerdos institucionales.
+Implementar vencimiento automático y reportes operativos; formalizar reglas de mora y validar con la EPCC las políticas, roles, cupos, plazos, consecuencias de retraso y tratamiento de pérdidas/daños antes de ampliar el dominio.

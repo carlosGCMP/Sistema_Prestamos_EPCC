@@ -11,7 +11,7 @@ Requisitos: Python 3.13+, Docker y Docker Compose.
 ```bash
 cp .env.example .env
 docker compose up -d db
-python -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 alembic upgrade head
@@ -21,6 +21,8 @@ uvicorn app.main:app --reload
 
 La API quedará disponible en `http://localhost:8000` y su contrato navegable en `http://localhost:8000/docs`.
 
+Para detenerla, interrumpe Uvicorn con `Ctrl+C`. PostgreSQL se puede detener sin borrar sus datos con `docker compose down`.
+
 ## Documentación
 
 - [Visión y alcance](docs/01-vision-y-alcance.md)
@@ -29,6 +31,7 @@ La API quedará disponible en `http://localhost:8000` y su contrato navegable en
 - [Plan de implementación](docs/04-plan-de-implementacion.md)
 - [Incremento inicial (10 %)](docs/05-incremento-inicial-10-porciento.md)
 - [Incremento funcional (25 %)](docs/06-incremento-funcional-25-porciento.md)
+- [Base para elaborar el informe del 25 %](docs/07-contexto-para-informe-25-porciento.md)
 - [Informe presentable del primer examen](docs/entregables/informe-primer-examen.pdf)
 - [Decisiones de arquitectura](docs/adr/README.md)
 
