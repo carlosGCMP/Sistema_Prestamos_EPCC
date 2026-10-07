@@ -1,33 +1,34 @@
 # Plan de implementación
 
-## Hito 0 — Base técnica (actual)
+## Hito 0 — Base técnica (completado)
 
 - Proyecto Python, API FastAPI y prueba de salud.
 - PostgreSQL local con Docker Compose.
 - Convenciones de dependencias, calidad y documentación.
 
-## Hito 1 — Fundaciones y catálogo
+## Hito 1 — Fundaciones, catálogo y préstamo inicial (25 % actual)
 
 1. Configuración por entorno, conexión de base de datos y Alembic.
 2. Modelo de `Persona`, cuenta, roles y autenticación.
-3. Catálogo: tipos de bien, fichas y unidades físicas.
-4. Endpoints CRUD protegidos y auditoría de cambios.
-5. Pruebas de repositorio, API y autorización.
+3. Catálogo: categorías, tipos de bien, fichas y unidades físicas.
+4. Políticas versionadas y validación manual mínima de elegibilidad académica.
+5. Reservas con decisión administrativa y cancelación.
+6. Entrega, renovación y devolución con comprobación transaccional y auditoría.
+7. Pruebas de API/autenticación y guía reproducible de desarrollo.
 
-**Resultado verificable:** un administrador registra un bien y una unidad; un usuario autenticado puede consultarla.
+**Resultado verificable:** un administrador inicia sesión, gestiona catálogo y políticas, confirma reservas y registra entregas, renovaciones y devoluciones; cada acción queda auditada.
 
-## Hito 2 — Políticas y préstamos
+## Hito 2 — Endurecimiento operativo de políticas y préstamos
 
-1. Política configurable por perfil y tipo de bien.
-2. Validación de vinculación académica mínima (manual/administrada mientras no exista integración).
-3. Entrega, devolución y renovaciones.
-4. Control de concurrencia para disponibilidad y bitácora de operaciones.
+1. Vencimientos automáticos, cupos completos y reglas institucionales.
+2. Ampliar concurrencia y pruebas de integración contra PostgreSQL.
+3. Gestión operativa de mora, reportes y notificaciones.
 
 **Resultado verificable:** el personal entrega y devuelve una unidad; el sistema rechaza una segunda entrega concurrente y conserva la política aplicada.
 
-## Hito 3 — Reservas y operación
+## Hito 3 — Operación ampliada
 
-1. Reserva, vencimiento y reglas de prioridad.
+1. Vencimiento automático y reglas de prioridad de reservas.
 2. Indicadores operativos: vencidos, bienes no disponibles y reservas pendientes.
 3. Notificaciones básicas por correo o tarea programada, si el canal está definido.
 
@@ -56,3 +57,12 @@
 - Identificador único de cada bien y si habrá lector de código de barras/QR.
 - Reglas de préstamo por categoría y tratamiento de retrasos, daños y pérdidas.
 - Requisitos de conservación de datos personales y de auditoría.
+
+## Seguimiento en GitHub
+
+El trabajo se organiza por hitos e issues del repositorio. El hito inicial agrupa la base técnica y de inventario; el hito del 25 % agrupa reglas de política, reservas, ciclo de préstamos y verificación/documentación. Los issues permanecen abiertos hasta que el PR asociado se revise y fusione.
+
+| Hito | Issues | Propósito |
+| --- | --- | --- |
+| [Incremento inicial (10 %)](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/1) | [#1](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/1)–[#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) | Persistencia, auditoría base, identidad, inventario, API protegida y CI/guía local. |
+| [Incremento funcional (25 %)](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/2) | [#7](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/7)–[#10](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/10) | Políticas, reservas, préstamo y cierre de verificación con instrucciones de muestra manual. |

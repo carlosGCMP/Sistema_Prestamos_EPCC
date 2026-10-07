@@ -2,6 +2,8 @@
 
 Esta es la traducción de los contextos delimitados entregados a módulos de implementación. No implica crear diez servicios independientes.
 
+El diagrama de referencia está en [diagramas/modelo-de-dominio.png](diagramas/modelo-de-dominio.png). El esquema completo representa el dominio objetivo; el incremento implementado cubre solo una parte de esos contextos.
+
 | Código | Módulo | Responsabilidad | Prioridad |
 | --- | --- | --- | --- |
 | BC01 | Identidad y acceso | Personas, cuentas, perfiles, roles y atribuciones. | MVP |
