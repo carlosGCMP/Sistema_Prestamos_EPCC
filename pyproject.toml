@@ -40,3 +40,7 @@ addopts = "-q"
 python_version = "3.13"
 strict = true
 packages = ["app"]
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
