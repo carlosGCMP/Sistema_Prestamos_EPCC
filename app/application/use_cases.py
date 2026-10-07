@@ -461,7 +461,7 @@ def cancel_reservation(
     )
     if reservation is None:
         raise UseCaseError(404, "Reserva no encontrada")
-    if reservation.applicant_id != actor.id and actor.role != Role.ADMIN:
+    if reservation.applicant_id != actor.id and actor.role != Role.INVENTORY_ADMIN:
         raise UseCaseError(403, "Solo el titular o personal autorizado puede cancelar la reserva")
     if reservation.state not in (ReservationState.PENDING, ReservationState.CONFIRMED):
         raise UseCaseError(409, "La reserva ya no puede cancelarse")

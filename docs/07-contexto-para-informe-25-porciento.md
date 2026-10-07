@@ -34,7 +34,7 @@ La dependencia normal es API → casos de uso → modelos/sesión de persistenci
 
 ## Funcionalidad incluida
 
-- Personas con roles de estudiante, docente y personal administrativo; perfiles académicos mínimos y cuenta local opcional.
+- Personas con roles de estudiante, docente, afiliación administrativa general y permiso diferenciado de administrador de inventario; perfiles académicos mínimos y cuenta local opcional. Solo `ADMIN_INVENTARIO` puede modificar inventario y administrar préstamos.
 - Autenticación por usuario/contraseña, contraseña almacenada como hash Argon2id, token Bearer JWT y permisos por rol. Cerrar sesión o desactivar una cuenta invalida tokens anteriores mediante versión de sesión.
 - Categorías, tipos de bienes, ficha de bien y unidades físicas. El código patrimonial de la unidad es único.
 - Políticas versionadas por rol y tipo de bien, con duración máxima, cupos, modalidades, elegibilidad académica manual y límite de renovaciones.
@@ -55,10 +55,10 @@ La dependencia normal es API → casos de uso → modelos/sesión de persistenci
 
 - Entorno local: Python 3.13.15, PostgreSQL 16-alpine en Docker.
 - `alembic upgrade head`: aplicado correctamente en una base de desarrollo nueva.
-- Suite del proyecto: 6 pruebas correctas; se incluyen autenticación, autorización, flujo de préstamo y regla de solapamiento.
+- Suite del proyecto: 7 pruebas correctas; se incluyen autenticación, separación de afiliación administrativa y permiso de inventario, flujo de préstamo y regla de solapamiento.
 - Ruff: “All checks passed”.
 - mypy: “Success: no issues found in 12 source files”.
-- Demostración HTTP contra PostgreSQL: se registraron datos ficticios, política y reserva; se entregó un préstamo, renovó y devolvió; estado final `DEVUELTO` y 12 eventos de auditoría.
+- Base local preparada para la muestra: PostgreSQL 16 y esquema migrado, sin cuentas ni datos demostrativos precargados. No presentar una muestra hecha por otra persona como si fuera del estudiante; seguir [08-demostracion-manual-25-porciento.md](08-demostracion-manual-25-porciento.md).
 - La interfaz disponible es Swagger/OpenAPI en `/docs`; no se ha implementado todavía un frontend de usuario.
 
 ## Instalación y demostración local
@@ -104,5 +104,6 @@ mypy
 - `docs/03-dominio-y-modulos.md`: conceptos y límites de contexto.
 - `docs/04-plan-de-implementacion.md`: hitos y avance.
 - `docs/06-incremento-funcional-25-porciento.md`: alcance y estado de este incremento.
+- `docs/08-demostracion-manual-25-porciento.md`: instrucciones para realizar personalmente la muestra.
 - `app/application/use_cases.py`, `app/models.py`, `app/routes.py`: reglas, persistencia y contrato API implementados.
 - `tests/`: pruebas automatizadas.

@@ -57,3 +57,12 @@
 - Identificador único de cada bien y si habrá lector de código de barras/QR.
 - Reglas de préstamo por categoría y tratamiento de retrasos, daños y pérdidas.
 - Requisitos de conservación de datos personales y de auditoría.
+
+## Seguimiento en GitHub
+
+El trabajo se organiza por hitos e issues del repositorio. El hito inicial agrupa la base técnica y de inventario; el hito del 25 % agrupa reglas de política, reservas, ciclo de préstamos y verificación/documentación. Los issues permanecen abiertos hasta que el PR asociado se revise y fusione.
+
+| Hito | Issues | Propósito |
+| --- | --- | --- |
+| [Incremento inicial (10 %)](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/1) | [#1](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/1)–[#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) | Persistencia, auditoría base, identidad, inventario, API protegida y CI/guía local. |
+| [Incremento funcional (25 %)](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/2) | [#7](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/7)–[#10](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/10) | Políticas, reservas, préstamo y cierre de verificación con instrucciones de muestra manual. |

@@ -84,5 +84,8 @@ def require_roles(*roles: Role) -> Callable[..., Person]:
 
 
 CurrentAccount = Annotated[Account, Depends(get_current_account)]
-AdminActor = Annotated[Person, Depends(require_roles(Role.ADMIN))]
-MemberActor = Annotated[Person, Depends(require_roles(Role.STUDENT, Role.TEACHER, Role.ADMIN))]
+AdminActor = Annotated[Person, Depends(require_roles(Role.INVENTORY_ADMIN))]
+MemberActor = Annotated[
+    Person,
+    Depends(require_roles(Role.STUDENT, Role.TEACHER, Role.ADMINISTRATIVE, Role.INVENTORY_ADMIN)),
+]

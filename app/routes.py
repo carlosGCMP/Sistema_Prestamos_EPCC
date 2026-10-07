@@ -219,7 +219,7 @@ def list_policies(_actor: AdminActor, session: SessionDep) -> list[LoanPolicy]:
 def request_reservation(
     data: ReservationCreate, actor: MemberActor, session: SessionDep
 ) -> Reservation:
-    if actor.role == Role.ADMIN:
+    if actor.role in (Role.ADMINISTRATIVE, Role.INVENTORY_ADMIN):
         raise HTTPException(status_code=403, detail="El rol administrativo no solicita préstamos")
     return create_reservation(
         session, actor, data.unit_id, data.starts_at, data.ends_at, data.intended_use
@@ -229,7 +229,7 @@ def request_reservation(
 @router.get("/reservations", response_model=list[ReservationOut], tags=["reservas"])
 def list_reservations(actor: MemberActor, session: SessionDep) -> list[Reservation]:
     statement = select(Reservation)
-    if actor.role != Role.ADMIN:
+    if actor.role != Role.INVENTORY_ADMIN:
         statement = statement.where(Reservation.applicant_id == actor.id)
     return list(session.scalars(statement.order_by(Reservation.starts_at.desc())).all())
 
@@ -271,7 +271,7 @@ def list_loans(actor: AdminActor, session: SessionDep) -> list[Loan]:
 @router.get("/loans/mine", response_model=list[LoanOut], tags=["préstamos"])
 def list_my_loans(actor: MemberActor, session: SessionDep) -> list[Loan]:
     statement = select(Loan)
-    if actor.role != Role.ADMIN:
+    if actor.role != Role.INVENTORY_ADMIN:
         statement = statement.where(Loan.applicant_id == actor.id)
     return list(session.scalars(statement.order_by(Loan.created_at.desc())).all())
 

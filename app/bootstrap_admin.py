@@ -12,7 +12,9 @@ from app.security import hash_password
 
 def main() -> None:
     with SessionLocal.begin() as session:
-        if session.scalar(select(Account.id).join(Person).where(Person.role == Role.ADMIN)):
+        if session.scalar(
+            select(Account.id).join(Person).where(Person.role == Role.INVENTORY_ADMIN)
+        ):
             raise SystemExit("Ya existe una cuenta administrativa; no se creó otra.")
         cui = input("CUI: ").strip()
         document_type = input("Tipo de documento [DNI]: ").strip() or "DNI"
@@ -30,7 +32,7 @@ def main() -> None:
             document_number=document_number,
             full_name=full_name,
             institutional_email=email,
-            role=Role.ADMIN,
+            role=Role.INVENTORY_ADMIN,
             school_affiliation="EPCC",
             start_date=date.today(),
         )

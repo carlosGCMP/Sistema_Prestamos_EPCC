@@ -8,7 +8,7 @@ Pasar de la base técnica del 10 % a un primer backend utilizable que conecte id
 
 - API modular en FastAPI y persistencia SQLAlchemy sobre PostgreSQL.
 - Migración inicial Alembic y configuración por variables de entorno.
-- Personas, perfiles mínimos, cuentas locales, contraseñas Argon2id, JWT, roles, bloqueo de sesión y comando interactivo para el primer administrador.
+- Personas, perfiles mínimos, cuentas locales, contraseñas Argon2id, JWT, bloqueo de sesión y roles diferenciados: la afiliación `PERSONAL_ADMINISTRATIVO` por sí sola no concede el permiso `ADMIN_INVENTARIO`.
 - Catálogo de categorías, tipos, fichas y unidades con código patrimonial único.
 - Políticas versionadas por rol/tipo, duración, cupos, modalidad, elegibilidad y renovaciones; el préstamo conserva una instantánea de la política aplicada.
 - Reserva solicitada, confirmada/rechazada y cancelada.
@@ -22,9 +22,9 @@ Garantías, incidencias, sanciones/apelaciones, integración con matrícula o di
 
 ## Verificación y limitaciones
 
-La verificación ejecutada en el entorno de desarrollo incluye Python 3.13.15, PostgreSQL 16 en Docker Compose, `alembic upgrade head`, 6 pruebas automatizadas, Ruff y mypy. Además, se recorrió manualmente la API conectada a PostgreSQL para registrar persona e inventario, crear política, solicitar/confirmar/cancelar una reserva y realizar entrega, renovación, devolución y consulta de auditoría. La prueba terminó con el préstamo en estado `DEVUELTO` y 12 eventos auditados.
+La verificación ejecutada en el entorno de desarrollo incluye Python 3.13.15, PostgreSQL 16 en Docker Compose, `alembic upgrade head`, 7 pruebas automatizadas, Ruff y mypy. Se verificaron también la disponibilidad de la API y la conexión a PostgreSQL. La base se dejó sin cuentas ni registros de demostración: la muestra manual corresponde al estudiante y está descrita paso a paso en [08-demostracion-manual-25-porciento.md](08-demostracion-manual-25-porciento.md).
 
-Las seis pruebas del proyecto usan SQLite en memoria; la migración y la demostración manual sí se ejecutaron contra PostgreSQL. No se ejecutaron pruebas de carga ni se verificó una instalación productiva. No se debe interpretar este 25 % como un sistema terminado.
+Las siete pruebas automatizadas usan SQLite en memoria; la migración se ejecutó contra PostgreSQL 16. No se ejecutaron pruebas de carga ni se verificó una instalación productiva. No se debe interpretar este 25 % como un sistema terminado. La CI de GitHub está configurada para repetir controles y migración en cada cambio, pendiente de pasar en el PR de este incremento.
 
 ## Puesta en marcha
 
@@ -40,6 +40,8 @@ uvicorn app.main:app --reload
 ```
 
 OpenAPI: `http://localhost:8000/docs`. Estado de proceso: `/health`; disponibilidad de base de datos: `/health/ready`.
+
+Guía para realizar personalmente el recorrido funcional en Swagger: [muestra manual del 25 %](08-demostracion-manual-25-porciento.md).
 
 ## Siguiente corte sugerido
 

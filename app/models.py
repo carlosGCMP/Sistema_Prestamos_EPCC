@@ -35,7 +35,8 @@ from app.database import Base
 class Role(StrEnum):
     STUDENT = "ESTUDIANTE"
     TEACHER = "DOCENTE"
-    ADMIN = "PERSONAL_ADMINISTRATIVO"
+    ADMINISTRATIVE = "PERSONAL_ADMINISTRATIVO"
+    INVENTORY_ADMIN = "ADMIN_INVENTARIO"
 
 
 class PersonState(StrEnum):

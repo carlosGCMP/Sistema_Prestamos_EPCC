@@ -32,6 +32,7 @@ Para detenerla, interrumpe Uvicorn con `Ctrl+C`. PostgreSQL se puede detener sin
 - [Incremento inicial (10 %)](docs/05-incremento-inicial-10-porciento.md)
 - [Incremento funcional (25 %)](docs/06-incremento-funcional-25-porciento.md)
 - [Base para elaborar el informe del 25 %](docs/07-contexto-para-informe-25-porciento.md)
+- [Paso a paso para tu muestra manual](docs/08-demostracion-manual-25-porciento.md)
 - [Informe presentable del primer examen](docs/entregables/informe-primer-examen.pdf)
 - [Decisiones de arquitectura](docs/adr/README.md)
 

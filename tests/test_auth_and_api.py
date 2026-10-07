@@ -21,7 +21,7 @@ def test_login_and_role_protected_profile(client, session_factory: sessionmaker[
             document_number="12345678",
             full_name="Administradora EPCC",
             institutional_email="admin@epcc.edu.pe",
-            role=Role.ADMIN,
+            role=Role.INVENTORY_ADMIN,
             school_affiliation="EPCC",
             start_date=date(2026, 1, 1),
         )
@@ -53,7 +53,7 @@ def test_login_rejects_wrong_password(client, session_factory: sessionmaker[Sess
             document_number="12345678",
             full_name="Administradora EPCC",
             institutional_email="admin@epcc.edu.pe",
-            role=Role.ADMIN,
+            role=Role.INVENTORY_ADMIN,
             school_affiliation="EPCC",
             start_date=date(2026, 1, 1),
         )
@@ -68,3 +68,40 @@ def test_login_rejects_wrong_password(client, session_factory: sessionmaker[Sess
         )
     response = client.post("/auth/token", data={"username": "admin", "password": "incorrecta"})
     assert response.status_code == 401
+
+
+def test_administrative_affiliation_does_not_grant_inventory_permissions(
+    client, session_factory: sessionmaker[Session]
+) -> None:  # type: ignore[no-untyped-def]
+    with session_factory.begin() as session:
+        person = Person(
+            cui="cui-administrative",
+            document_type="DNI",
+            document_number="87654321",
+            full_name="Personal administrativo",
+            institutional_email="staff@epcc.edu.pe",
+            role=Role.ADMINISTRATIVE,
+            school_affiliation="EPCC",
+            start_date=date(2026, 1, 1),
+        )
+        session.add(person)
+        session.flush()
+        session.add(
+            Account(
+                person_id=person.id,
+                username="staff",
+                password_hash=hash_password("una-clave-segura-2026"),
+            )
+        )
+    response = client.post(
+        "/auth/token", data={"username": "staff", "password": "una-clave-segura-2026"}
+    )
+    headers = {"Authorization": f"Bearer {response.json()['access_token']}"}
+    assert response.status_code == 200
+    assert client.get("/me", headers=headers).status_code == 200
+    assert (
+        client.post(
+            "/inventory/categories", headers=headers, json={"name": "No autorizado"}
+        ).status_code
+        == 403
+    )

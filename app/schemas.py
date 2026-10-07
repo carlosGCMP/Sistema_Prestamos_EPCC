@@ -45,7 +45,9 @@ class PersonCreate(BaseModel):
             raise ValueError("El perfil de estudiante requiere código, programa y semestre")
         if self.role == Role.TEACHER and not all((self.teacher_code, self.specialty)):
             raise ValueError("El perfil docente requiere código y especialidad")
-        if self.role == Role.ADMIN and (self.student_code or self.teacher_code):
+        if self.role in (Role.ADMINISTRATIVE, Role.INVENTORY_ADMIN) and (
+            self.student_code or self.teacher_code
+        ):
             raise ValueError("El personal administrativo no usa perfil académico de solicitante")
         return self
 

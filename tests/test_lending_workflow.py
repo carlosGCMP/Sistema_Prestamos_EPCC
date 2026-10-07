@@ -16,7 +16,7 @@ def test_policy_reservation_loan_renewal_and_return(
             document_number="87654321",
             full_name="Administradora EPCC",
             institutional_email="admin@epcc.edu.pe",
-            role=Role.ADMIN,
+            role=Role.INVENTORY_ADMIN,
             school_affiliation="EPCC",
             start_date=date(2026, 1, 1),
         )
