@@ -269,14 +269,6 @@ def create_person(session: Session, data: PersonCreate, actor: Person) -> Person
                 specialty=data.specialty,
             )
         )
-    if data.academic_status and data.academic_term:
-        session.add(
-            AcademicRecord(
-                person_id=person.id,
-                status=data.academic_status,
-                term=data.academic_term,
-            )
-        )
     audit(session, actor, "PERSONA_REGISTRADA", "Persona", person.id, {"role": person.role.value})
     return person
 

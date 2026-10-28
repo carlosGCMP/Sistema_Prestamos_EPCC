@@ -35,20 +35,16 @@ class PersonCreate(BaseModel):
     role: Role
     school_affiliation: str = Field(min_length=2, max_length=100)
     start_date: date
-    username: str | None = Field(default=None, min_length=3, max_length=50)
-    password: str | None = Field(default=None, min_length=12, max_length=128)
-    student_code: str | None = None
-    program: str | None = None
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=12, max_length=128)
+    student_code: str | None = Field(default=None, min_length=1, max_length=30)
+    program: str | None = Field(default=None, min_length=1, max_length=120)
     semester: int | None = Field(default=None, ge=1, le=20)
-    teacher_code: str | None = None
-    specialty: str | None = None
-    academic_status: str | None = None
-    academic_term: str | None = None
+    teacher_code: str | None = Field(default=None, min_length=1, max_length=30)
+    specialty: str | None = Field(default=None, min_length=1, max_length=120)
 
     @model_validator(mode="after")
     def validate_credentials_and_profile(self) -> "PersonCreate":
-        if (self.username is None) != (self.password is None):
-            raise ValueError("username y password deben enviarse juntos")
         if self.role == Role.STUDENT and not all((self.student_code, self.program, self.semester)):
             raise ValueError("El perfil de estudiante requiere código, programa y semestre")
         if self.role == Role.TEACHER and not all((self.teacher_code, self.specialty)):

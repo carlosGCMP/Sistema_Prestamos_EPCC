@@ -2,40 +2,40 @@
 
 ## Problema
 
-La EPCC necesita controlar el ciclo de vida de los bienes prestables: conocer qué unidad física se entrega, a quién, bajo qué reglas, cuándo debe regresar y qué ocurrió durante el préstamo. El sistema debe evitar entregas no autorizadas o sin disponibilidad y conservar evidencia auditable de cada decisión.
+La EPCC requiere controlar la consulta del catálogo institucional, la disponibilidad de bienes y las solicitudes de reserva. El sistema debe identificar a las personas usuarias y conservar evidencia de las decisiones administrativas.
 
-## Objetivo del producto
+## Objetivo
 
-Ofrecer una aplicación web con API para que personal autorizado administre bienes, políticas y operaciones de préstamo; y para que estudiantes y personal consulten, reserven y sigan sus solicitudes.
+Construir incrementalmente una API sencilla para administrar usuarios, catálogo e inventario, y reservas de unidades físicas.
 
-## Alcance del primer producto viable (MVP)
+## Alcance activo
 
-1. Autenticación y autorización por rol.
-2. Catálogo de bienes y unidades físicas, con estado y ubicación.
-3. Registro académico/administrativo básico del solicitante y validación de elegibilidad.
-4. Políticas de préstamo configurables por perfil y tipo de bien.
-5. Solicitud, reserva, entrega, devolución y renovación de préstamos.
-6. Auditoría de las operaciones críticas.
+1. Registro de personas y cuentas, autenticación y autorización por rol.
+2. Catálogo jerárquico: categorías, tipos de bien, fichas y unidades físicas.
+3. Consulta de inventario por código, estado y tipo.
+4. Solicitud, decisión administrativa y cancelación de reservas.
+5. Auditoría de operaciones principales.
 
-## Fuera del MVP
+## Fuera del alcance actual
 
-- Integración automática con sistemas institucionales de matrícula o identidad.
-- Cobros/pagos en línea y notificaciones multicanal.
-- Flujos completos de garantías, incidencias, sanciones y apelaciones. Se modelarán para no bloquear su incorporación posterior.
-- Aplicación móvil nativa.
+Políticas configurables, validación académica institucional, préstamos/entregas/devoluciones, renovaciones, garantías, incidencias, sanciones, apelaciones, integraciones externas y aplicación web/móvil.
 
 ## Roles iniciales
 
-| Rol | Responsabilidades principales |
+| Rol | Responsabilidades |
 | --- | --- |
-| Estudiante/docente | Consultar catálogo, solicitar/reservar y ver sus préstamos. |
-| Personal administrativo | Registrar entrega y devolución, administrar reservas según permisos. |
-| Encargado de inventario | Mantener fichas, unidades físicas, estado y ubicación. |
-| Administrador | Gestionar usuarios, roles, políticas y configuración. |
+| Estudiante/docente | Consultar catálogo y unidades, solicitar reservas y consultar sus solicitudes. |
+| `PERSONAL_ADMINISTRATIVO` | Consultar catálogo y perfil; este perfil no otorga permisos de inventario. |
+| `ADMIN_INVENTARIO` | Gestionar personas y catálogo/inventario, además de decidir reservas. |
 
-## Criterios de éxito iniciales
+Los permisos son deliberadamente básicos y podrán desglosarse cuando se definan las atribuciones institucionales.
 
-- No se puede entregar una unidad que no esté disponible ni a una persona bloqueada/no elegible.
-- Cada entrega y devolución identifica actor, fecha, unidad física y condición.
-- Las reglas aplicadas al préstamo quedan registradas incluso si la política luego cambia.
-- El personal puede reconstruir el historial de una unidad y de un préstamo.
+## Criterios de aceptación
+
+- Las credenciales incorrectas o las cuentas inactivas no permiten autenticarse.
+- Las rutas requieren el rol correspondiente.
+- Los identificadores de personas, cuentas y unidades tienen restricciones de unicidad.
+- Solo unidades activas y prestables pueden ser reservadas.
+- Una confirmación revalida la disponibilidad y evita reservas confirmadas solapadas.
+- Los intervalos se interpretan como semiabiertos `[inicio, fin)`, por lo que dos reservas contiguas son compatibles.
+- Las decisiones críticas y su auditoría se guardan dentro de una transacción.

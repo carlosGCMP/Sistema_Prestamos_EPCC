@@ -8,7 +8,10 @@ from app.infrastructure.database import engine
 app = FastAPI(
     title="Sistema de Préstamos EPCC",
     version="0.1.0",
-    description="API para la gestión de préstamos de bienes de la EPCC.",
+    description=(
+        "API básica de usuarios, catálogo e inventario, y reservas para la EPCC. "
+        "Las operaciones de préstamo todavía no están habilitadas."
+    ),
 )
 app.include_router(router)
 install_error_handlers(app)

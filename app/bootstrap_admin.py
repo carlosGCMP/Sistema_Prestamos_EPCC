@@ -5,6 +5,7 @@ from getpass import getpass
 
 from sqlalchemy import select
 
+from app.application.basic_use_cases import audit
 from app.core.security import hash_password
 from app.infrastructure.database import SessionLocal
 from app.infrastructure.models import Account, Person, Role
@@ -41,6 +42,7 @@ def main() -> None:
         session.add(
             Account(person_id=person.id, username=username, password_hash=hash_password(password))
         )
+        audit(session, person, "ADMINISTRADOR_INICIAL_CREADO", "Person", person.id)
     print(f"Cuenta administrativa '{username}' creada.")
 
 

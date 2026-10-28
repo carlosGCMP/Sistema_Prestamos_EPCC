@@ -1,38 +1,34 @@
-# Modelo de dominio y módulos
+# Modelo de dominio del alcance básico
 
-Esta es la traducción de los contextos delimitados entregados a módulos de implementación. No implica crear diez servicios independientes.
+El diagrama general conserva la visión completa del sistema. La implementación de esta etapa se limita a las entidades y responsabilidades siguientes:
 
-El diagrama de referencia está en [diagramas/modelo-de-dominio.png](diagramas/modelo-de-dominio.png). El esquema completo representa el dominio objetivo; el incremento implementado cubre solo una parte de esos contextos.
+| Módulo | Entidades | Responsabilidad |
+| --- | --- | --- |
+| Usuarios | `Persona`, `Account`, perfiles y `Role` | Registrar personas/cuentas, autenticar, autorizar y desactivar cuentas. |
+| Catálogo e inventario | `Category`, `ItemType`, `ItemCard`, `PhysicalUnit` | Clasificar bienes y administrar ejemplares identificados individualmente. |
+| Reservas | `Reservation` | Solicitar, confirmar, rechazar y cancelar reservas por unidad e intervalo. |
+| Transversal | `AuditEvent` | Registrar operaciones relevantes con su actor y fecha. |
 
-| Código | Módulo | Responsabilidad | Prioridad |
-| --- | --- | --- | --- |
-| BC01 | Identidad y acceso | Personas, cuentas, perfiles, roles y atribuciones. | MVP |
-| BC02 | Vinculación académica | Matrícula, período y condición académica. | MVP (mínimo) |
-| BC03 | Catálogo e inventario | Ficha de bien, tipo, unidad física, estado y ubicación. | MVP |
-| BC04 | Políticas de préstamo | Reglas por perfil/tipo: plazo, renovaciones, cupos. | MVP |
-| BC05 | Reservas | Cola, vigencia, disponibilidad y cupo. | MVP básico |
-| BC06 | Préstamos | Entrega, devolución, renovación y cálculo de retraso. | MVP |
-| BC07 | Garantías | Tipos, garantía asociada y su liberación. | Posterior |
-| BC08 | Incidencias | Daño, pérdida, reporte y resolución. | Posterior |
-| BC09 | Sanciones | Sanción, apelación, cumplimiento y bloqueo. | Posterior |
-| BC10 | Auditoría | Evento histórico, actor y trazabilidad. | MVP |
+## Relaciones
 
-## Agregados iniciales
+- Una persona puede asociarse a una cuenta para autenticarse; el acceso se determina mediante roles.
+- Una categoría agrupa tipos de bien y cada tipo pertenece a una categoría.
+- Un tipo agrupa fichas de catálogo; una ficha puede tener varias unidades físicas.
+- Cada unidad física se identifica por su código de inventario.
+- Una reserva relaciona a una persona solicitante con una unidad concreta.
+- Un evento de auditoría identifica al actor y la entidad afectada.
 
-- **Persona**: identidad, cuenta y roles. No contiene datos de préstamos.
-- **Unidad física**: representa el ejemplar prestable; guarda disponibilidad, ubicación y estado operativo.
-- **Política de préstamo**: determina las condiciones permitidas. Al crear un préstamo se persiste una `PolíticaAplicada` inmutable.
-- **Reserva**: solicitud por ficha/tipo o unidad según la política, con prioridad y vencimiento.
-- **Préstamo**: agregado transaccional de entrega, vencimiento, devolución y renovaciones.
+## Reglas principales
 
-## Reglas que deben ser invariantes
+1. Los códigos de cuenta y de inventario deben ser únicos.
+2. `ADMIN_INVENTARIO` administra personas, catálogo, unidades y decisiones de reserva.
+3. Solo solicitantes con cuenta activa pueden crear reservas.
+4. Las fechas deben incluir zona horaria, el inicio debe ser futuro y el fin posterior al inicio.
+5. Solo unidades activas y prestables admiten confirmación.
+6. Una reserva confirmada ocupa la unidad en `[inicio, fin)`. Dos intervalos se solapan si `inicio1 < fin2` y `inicio2 < fin1`.
+7. Al confirmar, el sistema bloquea la unidad y revalida su estado y conflictos en la misma transacción.
+8. El titular o un usuario autorizado puede cancelar una reserva según su estado.
 
-1. Una unidad física solo puede tener un préstamo activo a la vez.
-2. Solo una persona elegible y sin bloqueo puede recibir un préstamo.
-3. La entrega necesita una política vigente y una unidad disponible.
-4. Una renovación no puede superar el límite de la política ni ignorar una reserva prioritaria.
-5. Una devolución cierra el préstamo, actualiza el estado de la unidad y genera evento de auditoría.
+## Fuera del corte activo
 
-## Integración entre módulos
-
-El caso de uso de entrega consulta puertos de elegibilidad, bloqueo, política y disponibilidad; luego crea el préstamo en una única transacción. Tras confirmarse, publica eventos como `PrestamoEntregado` o `PrestamoDevuelto` para que auditoría y, después, notificaciones reaccionen. Evitar transacciones distribuidas y llamadas HTTP internas.
+Las políticas de préstamo, elegibilidad académica, préstamos, renovaciones, devoluciones, garantías, incidencias, sanciones y apelaciones no se exponen como funcionalidades operativas de esta etapa. Permanecen como conceptos de diseño futuro o histórico.

@@ -1,4 +1,6 @@
-# Fuente de contexto para redactar el informe del 25 %
+# HISTÓRICO — Fuente de contexto para redactar el informe del 25 %
+
+> Esta fuente pertenece a un corte anterior del proyecto y no debe interpretarse como el alcance activo.
 
 Este documento reúne datos verificables del proyecto para proporcionar a otra inteligencia artificial como fuente. No reemplaza el informe académico ni el informe del primer examen. Debe usarse junto con la lectura del código y los documentos enlazados al final.
 

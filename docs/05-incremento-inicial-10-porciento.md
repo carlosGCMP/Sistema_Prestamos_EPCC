@@ -1,4 +1,6 @@
-# Incremento inicial: 10 % del proyecto
+# HISTÓRICO — Incremento inicial: 10 % del proyecto
+
+> Este documento describe un corte anterior del proyecto; para el alcance ejecutable actual, consulta [el plan básico](09-alcance-basico-y-plan.md).
 
 ## Propósito
 

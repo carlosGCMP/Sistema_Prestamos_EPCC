@@ -1,67 +1,56 @@
 # Arquitectura y tecnologías
 
-## Decisión principal: monolito modular
+## Enfoque
 
-La especificación identifica diez contextos delimitados. Se implementarán como módulos internos con contratos explícitos, una API y una base PostgreSQL compartida **al inicio**. Así se acelera la entrega, las transacciones de inventario/préstamo son consistentes y se conserva una vía clara para extraer un contexto si la escala lo justifica.
-
-No habrá dependencias directas entre modelos de dominio de módulos distintos. La coordinación se hará mediante casos de uso, interfaces (puertos) y eventos de dominio publicados dentro del proceso.
+Se adopta un monolito modular: una API y una base PostgreSQL. Las rutas HTTP se limitan a validar y autorizar; casos de uso pequeños coordinan las reglas; la infraestructura persiste mediante SQLAlchemy. No se incorporan microservicios, colas ni frameworks adicionales.
 
 ```text
-Cliente web (pendiente de seleccionar)
-          │ HTTPS / JSON
-FastAPI ──┼── módulos de aplicación ── dominio
-          │                              │
-          └── infraestructura ───────── PostgreSQL
-                         └───────────── auditoría / eventos
+Cliente HTTP ── JSON ── FastAPI
+                          ├── Usuarios
+                          ├── Catálogo e inventario
+                          └── Reservas
+                               │
+                         Casos de uso
+                               │
+                       SQLAlchemy 2.x
+                               │
+                         PostgreSQL
 ```
 
-## Stack propuesto
+## Stack
 
-| Área | Elección | Motivo |
+| Área | Tecnología | Uso |
 | --- | --- | --- |
-| Lenguaje | Python 3.13 | Tipado moderno, ecosistema sólido y productividad. |
-| API | FastAPI | OpenAPI automático, validación con Pydantic y soporte asíncrono cuando se requiera. |
-| Dominio | Python tipado + Pydantic solo en bordes | Entidades y reglas independientes del framework; DTOs validados en la API. |
-| Persistencia | SQLAlchemy 2 + Psycopg 3 | ORM maduro, transacciones explícitas y buen soporte PostgreSQL. |
-| Base de datos | PostgreSQL 16 | Integridad referencial, bloqueo/transacciones y tipos avanzados. |
-| Migraciones | Alembic | Versiona el esquema junto al código. |
-| Autenticación | OAuth2 password flow + JWT de corta vida | Adecuado para el inicio; después se puede federar con identidad institucional. |
-| Pruebas | pytest + httpx | Pruebas unitarias del dominio e integración de API. |
-| Calidad | Ruff + mypy | Formato/lint rápido y contratos de tipos. |
-| Desarrollo local | Docker Compose | PostgreSQL reproducible sin instalarlo localmente. |
-| Despliegue | Contenedores Docker + CI | Mismo artefacto entre desarrollo, pruebas y producción. |
+| Lenguaje | Python 3.13 | Implementación con anotaciones de tipos. |
+| API | FastAPI | Rutas HTTP y documentación OpenAPI. |
+| Validación | Pydantic | Validar datos de entrada y salida en los límites de la API. |
+| Persistencia | SQLAlchemy 2.x | Modelos ORM, consultas y transacciones. |
+| Base de datos | PostgreSQL 16 | Persistencia relacional e integridad referencial. |
+| Migraciones | Alembic | Evolución versionada del esquema. |
+| Autenticación | JWT y Argon2 | Sesiones de API y almacenamiento seguro de contraseñas. |
+| Calidad | Ruff y mypy | Formato, análisis estático y verificación de tipos. |
+| Entorno local | Docker Compose | Servicio reproducible de PostgreSQL. |
 
-## Frontend
+No se incorpora frontend en este alcance. FastAPI/OpenAPI sirve para explorar y validar las operaciones mientras se estabiliza el dominio.
 
-La primera fase entrega una API documentada para validar reglas de negocio. Para el panel web se recomienda **React + TypeScript + Vite**, consumiendo OpenAPI; no se debe iniciar hasta estabilizar los flujos de catálogo y préstamo. Si el equipo prefiere reducir la superficie tecnológica, una interfaz administrativa renderizada en servidor es una alternativa válida que deberá decidirse antes de esa fase.
-
-## Estructura de código objetivo por contexto
-
-La estructura ya creada en el incremento actual agrupa los módulos por responsabilidad técnica (`api`, `application`, `core`, `infrastructure`). La estructura siguiente es el objetivo posterior para aislar cada contexto delimitado; no está implementada todavía y no se debe confundir con los directorios presentes actualmente.
+## Capas del código
 
 ```text
-app/
-  shared/                 # value objects, errores y utilidades comunes
-  identity_access/        # cada contexto con domain/application/infrastructure/api
-  academic_link/
-  inventory/
-  loan_policies/
-  reservations/
-  loans/
-  guarantees/
-  incidents/
-  sanctions/
-  audit/
-  main.py
+app/api             contratos HTTP, dependencias y autorización
+app/application     casos de uso y coordinación transaccional
+app/core            configuración y seguridad transversal
+app/infrastructure  sesión, modelos ORM y persistencia
 ```
 
-Dentro de cada módulo: `domain` contiene entidades, value objects, eventos e interfaces; `application`, los casos de uso y DTOs; `infrastructure`, repositorios SQLAlchemy e integraciones; `api`, los routers HTTP. No se expondrán modelos ORM directamente por la API.
+Las capas internas no deben depender de FastAPI. Las rutas delegan reglas a casos de uso, evitando lógica de negocio duplicada y manteniendo responsabilidades acotadas.
 
-## Datos y seguridad
+## Decisiones de implementación
 
-- Usar UUID como identificadores externos; claves internas pueden ser UUID desde el inicio.
-- Conservar fechas en UTC (`timestamptz`) y representar dinero con `numeric`, nunca `float`.
-- Aplicar restricciones de base de datos además de validaciones de aplicación.
-- Bloquear la fila de unidad física al confirmar entrega/devolución para impedir doble préstamo concurrente.
-- Contraseñas con Argon2id; secretos fuera del repositorio; TLS obligatorio en producción.
-- Añadir registro de auditoría inmutable para las acciones críticas, sin guardar contraseñas ni tokens.
+- Fechas con zona horaria; persistencia temporal normalizada a UTC.
+- Contraseñas almacenadas como hash Argon2, nunca como texto ni incluidas en respuestas.
+- Secretos configurados fuera del repositorio.
+- Restricciones SQL para invariantes de unicidad y relaciones, además de validaciones de aplicación.
+- Al confirmar una reserva, bloquear la unidad y volver a comprobar estado y solapamientos en la misma transacción.
+- La auditoría de la operación se confirma junto con el cambio principal.
+
+El ORM y el esquema heredado aún contienen entidades de módulos futuros. No se presentan como funcionalidad activa: las rutas de esta etapa se limitan a usuarios, catálogo/inventario y reservas.

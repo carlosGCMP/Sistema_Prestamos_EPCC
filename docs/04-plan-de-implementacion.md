@@ -1,68 +1,37 @@
 # Plan de implementación
 
-## Hito 0 — Base técnica (completado)
+## Prioridad del corte básico
 
-- Proyecto Python, API FastAPI y prueba de salud.
-- PostgreSQL local con Docker Compose.
-- Convenciones de dependencias, calidad y documentación.
-
-## Hito 1 — Fundaciones, catálogo y préstamo inicial (25 % actual)
-
-1. Configuración por entorno, conexión de base de datos y Alembic.
-2. Modelo de `Persona`, cuenta, roles y autenticación.
-3. Catálogo: categorías, tipos de bien, fichas y unidades físicas.
-4. Políticas versionadas y validación manual mínima de elegibilidad académica.
-5. Reservas con decisión administrativa y cancelación.
-6. Entrega, renovación y devolución con comprobación transaccional y auditoría.
-7. Pruebas de API/autenticación y guía reproducible de desarrollo.
-
-**Resultado verificable:** un administrador inicia sesión, gestiona catálogo y políticas, confirma reservas y registra entregas, renovaciones y devoluciones; cada acción queda auditada.
-
-## Hito 2 — Endurecimiento operativo de políticas y préstamos
-
-1. Vencimientos automáticos, cupos completos y reglas institucionales.
-2. Ampliar concurrencia y pruebas de integración contra PostgreSQL.
-3. Gestión operativa de mora, reportes y notificaciones.
-
-**Resultado verificable:** el personal entrega y devuelve una unidad; el sistema rechaza una segunda entrega concurrente y conserva la política aplicada.
-
-## Hito 3 — Operación ampliada
-
-1. Vencimiento automático y reglas de prioridad de reservas.
-2. Indicadores operativos: vencidos, bienes no disponibles y reservas pendientes.
-3. Notificaciones básicas por correo o tarea programada, si el canal está definido.
-
-## Hito 4 — Excepciones y madurez
-
-1. Garantías, incidencias, sanciones y apelaciones.
-2. Integración institucional de identidad/matrícula.
-3. Interfaz web para usuarios y panel administrativo.
-4. Observabilidad, respaldos, CI/CD y pruebas de carga.
-
-## Primer backlog ejecutable
-
-| Orden | Historia | Criterio de aceptación resumido |
+| Prioridad | Tarea | Criterio de aceptación |
 | --- | --- | --- |
-| 1 | Como desarrollador, versiono el esquema. | Una base nueva se crea mediante migraciones. |
-| 2 | Como administrador, gestiono roles. | Cada endpoint restringe acciones por permiso. |
-| 3 | Como inventarista, registro unidades. | No existen dos códigos patrimoniales iguales. |
-| 4 | Como administrador, defino una política. | Plazo y límite de renovaciones quedan validados. |
-| 5 | Como personal, entrego una unidad. | Se validan elegibilidad, política y disponibilidad atómicamente. |
-| 6 | Como personal, recibo una devolución. | Se cierra el préstamo y se registra la auditoría. |
+| P0 | Configuración y persistencia | La aplicación se configura por entorno y conecta a PostgreSQL sin secretos versionados. |
+| P0 | Usuarios y autorización | Se registra y desactiva una persona; autenticación y permisos respetan roles. |
+| P0 | Catálogo e inventario | Se administran categorías, tipos, fichas y unidades con códigos únicos. |
+| P0 | Reservas | Se solicita, decide y cancela; no se confirman intervalos solapados para una misma unidad. |
+| P1 | Calidad y documentación | Las verificaciones estáticas y las instrucciones de ejecución son reproducibles. |
+| P2 | Capacidades futuras | Préstamos, políticas e incidencias se planifican en incrementos posteriores. |
 
-## Decisiones pendientes que requieren validación institucional
+## Principios de trabajo
 
-- Fuente oficial y frecuencia de actualización de matrícula/condición académica.
-- Roles concretos, niveles de autorización y responsables de aprobación.
-- Identificador único de cada bien y si habrá lector de código de barras/QR.
-- Reglas de préstamo por categoría y tratamiento de retrasos, daños y pérdidas.
-- Requisitos de conservación de datos personales y de auditoría.
+- Mantener cambios pequeños y vinculados a issues concretos.
+- Una responsabilidad por función/clase; dependencias explícitas y casos de uso simples.
+- Validar entradas en la API, aplicar reglas en la capa de aplicación y reforzar invariantes en PostgreSQL.
+- Crear una rama descriptiva por tarea y commits con propósito explícito.
+- Revisar el diff y actualizar documentación cuando cambie el comportamiento.
+- No reescribir ni eliminar migraciones aplicadas. Cambios de esquema deben ser aditivos y contar con respaldo/plan de reversión.
+- No subir secretos, bases locales ni informes privados.
 
-## Seguimiento en GitHub
+## Organización de seguimiento
 
-El trabajo se organiza por hitos e issues del repositorio. El hito inicial agrupa la base técnica y de inventario; el hito del 25 % agrupa reglas de política, reservas, ciclo de préstamos y verificación/documentación. Los issues permanecen abiertos hasta que el PR asociado se revise y fusione.
+El trabajo se sigue en el milestone [Implementación básica: usuarios, catálogo e inventario, reservas](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/3) y en el [tablero Kanban](https://github.com/users/carlosGCMP/projects/2). Los issues abiertos definen la siguiente unidad de trabajo; se cierran al completar y verificar su criterio de aceptación.
 
-| Hito | Issues | Propósito |
-| --- | --- | --- |
-| [Incremento inicial (10 %)](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/1) | [#1](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/1)–[#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) | Persistencia, auditoría base, identidad, inventario, API protegida y CI/guía local. |
-| [Incremento funcional (25 %)](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/milestone/2) | [#7](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/7)–[#10](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/10) | Políticas, reservas, préstamo y cierre de verificación con instrucciones de muestra manual. |
+| Issue | Propósito |
+| --- | --- |
+| [#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) | Integración continua y guía de desarrollo básico. |
+| [#8](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/8) | Flujo básico de reservas. |
+| [#10](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/10) | Documentación del alcance activo. |
+| [#14](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/14) | API básica de usuarios, inventario y reservas. |
+| [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15) | Alinear la suite de pruebas con el alcance reducido. |
+| [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16) | Revisar el esquema heredado y planear su evolución segura. |
+
+Los módulos no activos se conservan fuera del router y no se presentan como implementados. La rama de trabajo para este alcance es `implementacion-basica`.

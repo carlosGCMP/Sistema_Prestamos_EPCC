@@ -1,4 +1,6 @@
-# Paso a paso para realizar la muestra manual del 25 %
+# HISTÓRICO — Paso a paso para realizar la muestra manual del 25 %
+
+> Esta guía pertenece a un corte anterior del proyecto y puede no coincidir con las rutas activas.
 
 Esta guía es para que el estudiante ejecute y explique personalmente el sistema. No hay datos de demostración ni credenciales precargadas. Los registros que se creen quedarán en la base local de desarrollo.
 

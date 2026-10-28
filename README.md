@@ -1,14 +1,14 @@
 # Sistema de Préstamos EPCC
 
-API para administrar la identidad de solicitantes, inventario de bienes, políticas, reservas y préstamos de la Escuela Profesional de Ciencia de la Computación (EPCC).
+API para una implementación inicial del sistema de préstamos de bienes de la EPCC. El alcance activo se limita a usuarios, catálogo/inventario y reservas.
 
 ## Estado actual
 
-El repositorio contiene un primer incremento funcional de backend, estimado como alcance del 25 % del proyecto completo. Es una referencia de avance, no una certificación de completitud ni de preparación para producción. El trabajo está en la rama `implementacion-25-porciento` y se revisa en el [PR #12](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/pull/12).
+La rama `implementacion-basica` restablece un alcance inicial y acotado. Los porcentajes estiman alcance del proyecto; no representan cobertura de pruebas ni preparación para producción.
 
-Incluye autenticación local, catálogo e inventario, políticas versionadas, reservas, entrega/renovación/devolución, auditoría, migraciones y una API OpenAPI. Garantías, incidencias, sanciones, apelaciones, integración institucional, interfaz web y despliegue productivo aún no están implementados.
+El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
 
-La verificación local registrada es: 7 pruebas aprobadas, Ruff sin errores, formato revisado en 33 archivos, mypy sin errores en 14 archivos fuente y migración aplicada en PostgreSQL 16. La CI de GitHub aún no está activa: el issue [#6](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/6) sigue abierto porque la credencial actual no puede publicar workflows.
+Las migraciones versionadas existentes se conservan para evitar eliminar datos o reescribir el historial; el esquema físico aún contiene tablas de capacidades aplazadas. No se ejecuta una migración destructiva para borrarlas.
 
 ## Tecnologías
 
@@ -22,7 +22,7 @@ La verificación local registrada es: 7 pruebas aprobadas, Ruff sin errores, for
 Requisitos: Python 3.13+, Docker y Docker Compose.
 
 ```bash
-cp .env.example .env
+test -f .env || cp .env.example .env
 docker compose up -d db
 python3.13 -m venv .venv
 source .venv/bin/activate
@@ -47,16 +47,23 @@ app/
   main.py            Construcción de la aplicación FastAPI
   bootstrap_admin.py Alta interactiva del primer administrador
 migrations/          Historial versionado del esquema PostgreSQL
-tests/               Pruebas automatizadas de API y reglas del dominio
-docs/                Arquitectura, planificación, operación y entregables
-  diagramas/         Diagramas de referencia
-  informes/          PDF presentable del primer examen
-  adr/               Decisiones de arquitectura
-scripts/             Herramientas auxiliares para documentos
+tests/               Pruebas automatizadas anteriores, pendientes de ajustar al corte
+docs/                Arquitectura, planificación y entregables
 ```
 
-La separación actual es técnica y aún no divide las reglas por cada contexto delimitado. Los modelos ORM y parte de la lógica de aplicación conservan acoplamientos que se reducirán gradualmente; no se deben interpretar todos los módulos del diagrama de dominio como ya implementados.
+La separación actual es técnica; los módulos activos comparten una API, una base PostgreSQL y transacciones SQLAlchemy. Las capacidades diferidas no deben interpretarse como funciones disponibles.
+
+## Verificación estática disponible
+
+```bash
+source .venv/bin/activate
+ruff check app
+ruff format --check app
+mypy app
+```
+
+La suite actual contiene escenarios de módulos avanzados anteriores y debe alinearse con el corte básico antes de usar `pytest` o `scripts/verify_postgresql.sh`; ese trabajo está en el issue [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15). Ruff y mypy pasan; no se ejecutó la suite automatizada.
 
 ## Documentación
 
-Comienza por el [índice de documentación](docs/README.md). Para ejecutar la muestra por cuenta propia, sigue [la guía manual del 25 %](docs/08-demostracion-manual-25-porciento.md). Los README locales de estado y operación son deliberadamente excluidos de Git y no se publican.
+Comienza por el [índice de documentación](docs/README.md), revisa el [plan básico](docs/09-alcance-basico-y-plan.md) y el [tablero Kanban](docs/10-tablero-kanban-local.md). Los documentos de incrementos anteriores se conservan como referencias históricas.

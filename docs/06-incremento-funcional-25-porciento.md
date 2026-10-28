@@ -1,4 +1,6 @@
-# Incremento funcional — 25 %
+# HISTÓRICO — Incremento funcional: 25 %
+
+> Este documento describe un corte anterior del proyecto; para el alcance ejecutable actual, consulta [el plan básico](09-alcance-basico-y-plan.md).
 
 ## Objetivo
 
