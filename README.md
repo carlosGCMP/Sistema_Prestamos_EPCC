@@ -6,13 +6,14 @@ API para una implementación inicial del sistema de préstamos de bienes de la E
 
 La rama `implementacion-basica` restablece un alcance inicial y acotado. Los porcentajes estiman alcance del proyecto; no representan cobertura de pruebas ni preparación para producción.
 
-El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
+El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. Incluye una interfaz web básica en HTML, CSS y JavaScript que consume la API. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
 
 Las migraciones versionadas existentes se conservan para evitar eliminar datos o reescribir el historial; el esquema físico aún contiene tablas de capacidades aplazadas. No se ejecuta una migración destructiva para borrarlas.
 
 ## Tecnologías
 
 - Python 3.13 y FastAPI.
+- HTML, CSS y JavaScript nativo para el frontend básico, servido por FastAPI.
 - SQLAlchemy 2, Psycopg 3, PostgreSQL 16 y Alembic.
 - Pydantic, JWT y Argon2id.
 - pytest, Ruff, mypy y Docker Compose.
@@ -34,6 +35,8 @@ uvicorn app.main:app --reload
 
 La documentación interactiva está en `http://127.0.0.1:8000/docs`; readiness está en `http://127.0.0.1:8000/health/ready`. El comando de bootstrap crea la primera cuenta de administración de forma interactiva; no hay credenciales predeterminadas.
 
+La interfaz web está en `http://127.0.0.1:8000/`. No requiere Node.js ni un proceso de frontend separado.
+
 Para detener la API, usa `Ctrl+C`. Para detener PostgreSQL conservando los datos, ejecuta `docker compose down` (no agregues `-v` salvo que quieras eliminar el volumen local).
 
 ## Estructura
@@ -46,12 +49,13 @@ app/
   infrastructure/    Persistencia SQLAlchemy y modelos ORM
   main.py            Construcción de la aplicación FastAPI
   bootstrap_admin.py Alta interactiva del primer administrador
+frontend/            Interfaz HTML, CSS y JavaScript servida por FastAPI
 migrations/          Historial versionado del esquema PostgreSQL
 tests/               Pruebas automatizadas anteriores, pendientes de ajustar al corte
 docs/                Arquitectura, planificación y entregables
 ```
 
-La separación actual es técnica; los módulos activos comparten una API, una base PostgreSQL y transacciones SQLAlchemy. Las capacidades diferidas no deben interpretarse como funciones disponibles.
+La separación actual es técnica; los módulos activos comparten una API, una base PostgreSQL y transacciones SQLAlchemy. El navegador consume el backend por HTTP en el mismo origen; no se conecta directamente a PostgreSQL. Las capacidades diferidas no deben interpretarse como funciones disponibles.
 
 ## Verificación estática disponible
 

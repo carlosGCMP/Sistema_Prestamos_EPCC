@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#163b35">
+    <title>Sistema de Préstamos EPCC</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main id="login-view" class="login-shell">
+      <section class="login-card" aria-labelledby="login-title">
+        <p class="eyebrow">EPCC · UNSA</p>
+        <h1 id="login-title">Sistema de Préstamos</h1>
+        <p class="muted">Ingresa con tu cuenta institucional para continuar.</p>
+        <form id="login-form" class="form-stack">
+          <label>Usuario <input name="username" autocomplete="username" required></label>
+          <label>Contraseña <input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="button primary" type="submit">Iniciar sesión</button>
+        </form>
+        <p id="login-error" class="feedback error" role="alert" hidden></p>
+      </section>
+    </main>
+
+    <div id="app-view" class="app-shell" hidden>
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Inicio">
+          <span class="brand-mark">EP</span>
+          <span><strong>Préstamos EPCC</strong><small>Gestión de bienes</small></span>
+        </a>
+        <div class="account-menu">
+          <span id="account-name" class="account-name"></span>
+          <button id="logout-button" class="button quiet" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Navegación principal">
+          <p class="eyebrow">MÓDULOS</p>
+          <nav class="main-nav">
+            <button class="nav-link active" data-view="inventory-view" type="button">Inventario</button>
+            <button class="nav-link" data-view="reservations-view" type="button">Reservas</button>
+            <button class="nav-link admin-only" data-view="people-view" type="button" hidden>Usuarios</button>
+          </nav>
+          <div class="sidebar-note">
+            <span class="status-dot"></span>
+            <span>API conectada</span>
+          </div>
+        </aside>
+
+        <main class="content">
+          <section id="inventory-view" class="page-view">
+            <div class="page-heading">
+              <div><p class="eyebrow">CATÁLOGO E INVENTARIO</p><h1>Bienes disponibles</h1></div>
+              <button class="button secondary refresh-button" type="button">Actualizar</button>
+            </div>
+            <p class="muted">Consulta las unidades físicas registradas y su estado actual.</p>
+
+            <section class="panel">
+              <div class="panel-heading"><div><h2>Unidades</h2><p>Ejemplares identificados por código de inventario.</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>Código</th><th>Bien</th><th>Ubicación</th><th>Condición</th><th>Estado</th></tr></thead><tbody id="units-table"></tbody></table></div>
+              <p id="units-empty" class="empty-state" hidden>No hay unidades para mostrar.</p>
+            </section>
+
+            <section class="panel admin-only" hidden>
+              <div class="panel-heading"><div><h2>Registrar en el catálogo</h2><p>Completa los niveles en orden: categoría, tipo, ficha y unidad.</p></div></div>
+              <div class="forms-grid">
+                <form id="category-form" class="compact-form">
+                  <h3>1. Categoría</h3>
+                  <label>Nombre<input name="name" required maxlength="100"></label>
+                  <label>Descripción<input name="description" maxlength="500"></label>
+                  <button class="button secondary" type="submit">Crear categoría</button>
+                </form>
+                <form id="type-form" class="compact-form">
+                  <h3>2. Tipo de bien</h3>
+                  <label>Nombre<input name="name" required maxlength="120"></label>
+                  <label>Categoría<select name="category_id" required></select></label>
+                  <label class="checkbox-label"><input name="lendable" type="checkbox" checked> Se puede reservar</label>
+                  <button class="button secondary" type="submit">Crear tipo</button>
+                </form>
+                <form id="item-form" class="compact-form">
+                  <h3>3. Ficha de catálogo</h3>
+                  <label>Nombre<input name="name" required maxlength="150"></label>
+                  <label>Tipo de bien<select name="item_type_id" required></select></label>
+                  <label>Descripción<input name="description" maxlength="500"></label>
+                  <button class="button secondary" type="submit">Crear ficha</button>
+                </form>
+                <form id="unit-form" class="compact-form">
+                  <h3>4. Unidad física</h3>
+                  <label>Ficha<select name="item_card_id" required></select></label>
+                  <label>Código de inventario<input name="inventory_code" required maxlength="50"></label>
+                  <label>Número de serie<input name="serial_number" maxlength="100"></label>
+                  <label>Ubicación<input name="location" required maxlength="100"></label>
+                  <label>Responsable de custodia<input name="custody" required maxlength="150"></label>
+                  <label>Condición<input name="condition" required maxlength="100" placeholder="Bueno"></label>
+                  <label>Accesorios (separados por coma)<input name="accessories" placeholder="Cargador, estuche"></label>
+                  <button class="button secondary" type="submit">Registrar unidad</button>
+                </form>
+              </div>
+            </section>
+          </section>
+
+          <section id="reservations-view" class="page-view" hidden>
+            <div class="page-heading">
+              <div><p class="eyebrow">SOLICITUDES</p><h1>Reservas</h1></div>
+              <button class="button secondary refresh-button" type="button">Actualizar</button>
+            </div>
+            <p class="muted">Las reservas se solicitan para una unidad y un intervalo de tiempo.</p>
+            <section class="panel requester-only" id="reservation-create-panel">
+              <div class="panel-heading"><div><h2>Solicitar una reserva</h2><p>Solo para estudiantes y docentes con cuenta activa.</p></div></div>
+              <form id="reservation-form" class="reservation-form">
+                <label>Unidad disponible<select name="unit_id" required></select></label>
+                <label>Desde<input name="starts_at" type="datetime-local" required></label>
+                <label>Hasta<input name="ends_at" type="datetime-local" required></label>
+                <label class="wide-field">Uso previsto<input name="intended_use" required maxlength="300"></label>
+                <button class="button primary" type="submit">Enviar solicitud</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-heading"><div><h2 id="reservations-heading">Mis reservas</h2><p>El estado se actualiza al recargar la información.</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>Unidad</th><th>Desde</th><th>Hasta</th><th>Uso</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="reservations-table"></tbody></table></div>
+              <p id="reservations-empty" class="empty-state" hidden>No hay reservas para mostrar.</p>
+            </section>
+          </section>
+
+          <section id="people-view" class="page-view" hidden>
+            <div class="page-heading">
+              <div><p class="eyebrow">CUENTAS Y ACCESO</p><h1>Usuarios</h1></div>
+              <button class="button secondary refresh-button" type="button">Actualizar</button>
+            </div>
+            <section class="panel">
+              <div class="panel-heading"><div><h2>Registrar persona</h2><p>Los campos de perfil dependen del rol seleccionado.</p></div></div>
+              <form id="person-form" class="forms-grid user-form">
+                <label>CUI<input name="cui" required minlength="4" maxlength="20"></label>
+                <label>Tipo de documento<input name="document_type" required value="DNI" maxlength="20"></label>
+                <label>Número de documento<input name="document_number" required maxlength="30"></label>
+                <label>Nombre completo<input name="full_name" required maxlength="200"></label>
+                <label>Correo institucional<input name="institutional_email" type="email" required maxlength="150"></label>
+                <label>Rol<select name="role" required><option value="ESTUDIANTE">Estudiante</option><option value="DOCENTE">Docente</option><option value="PERSONAL_ADMINISTRATIVO">Personal administrativo</option><option value="ADMIN_INVENTARIO">Administrador de inventario</option></select></label>
+                <label>Afiliación<input name="school_affiliation" required value="EPCC" maxlength="100"></label>
+                <label>Fecha de inicio<input name="start_date" type="date" required></label>
+                <label>Usuario<input name="username" required minlength="3" maxlength="50" autocomplete="off"></label>
+                <label>Contraseña temporal<input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
+                <label class="student-field">Código universitario<input name="student_code" maxlength="30"></label>
+                <label class="student-field">Programa<input name="program" maxlength="120"></label>
+                <label class="student-field">Semestre<input name="semester" type="number" min="1" max="20"></label>
+                <label class="teacher-field">Código docente<input name="teacher_code" maxlength="30"></label>
+                <label class="teacher-field">Especialidad<input name="specialty" maxlength="120"></label>
+                <button class="button primary" type="submit">Crear usuario</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-heading"><div><h2>Personas registradas</h2><p>Las cuentas desactivadas ya no pueden iniciar sesión.</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="people-table"></tbody></table></div>
+              <p id="people-empty" class="empty-state" hidden>No hay personas registradas.</p>
+            </section>
+          </section>
+        </main>
+      </div>
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+  </body>
+</html>

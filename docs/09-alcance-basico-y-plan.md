@@ -17,7 +17,7 @@ La lista exacta y vigente de rutas se obtiene de `/openapi.json` o `/docs` al ej
 
 ## Qué no está activo
 
-La API no expone políticas configurables, préstamos, renovaciones/devoluciones, condición académica, garantías, incidencias, sanciones, apelaciones ni resumen de operaciones. Tampoco se integra con sistemas externos ni incluye interfaz web.
+La API no expone políticas configurables, préstamos, renovaciones/devoluciones, condición académica, garantías, incidencias, sanciones ni apelaciones. Tampoco se integra con sistemas externos. Se añadió una interfaz web mínima que consume los endpoints básicos del backend.
 
 ## Persistencia y compatibilidad
 
