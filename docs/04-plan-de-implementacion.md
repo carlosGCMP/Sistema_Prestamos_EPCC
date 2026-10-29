@@ -34,5 +34,6 @@ El trabajo se sigue en el milestone [Implementación básica: usuarios, catálog
 | [#14](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/14) | API básica de usuarios, inventario y reservas. |
 | [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15) | Alinear la suite de pruebas con el alcance reducido. |
 | [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16) | Revisar el esquema heredado y planear su evolución segura. |
+| [#17](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/17) | Implementar interfaz web básica para los módulos iniciales. |
 
 Los módulos no activos se conservan fuera del router y no se presentan como implementados. `implementacion-basica` es la rama base; los cambios de interfaz se trabajan en ramas `feat/*`, actualmente `feat/frontend-basico`.
