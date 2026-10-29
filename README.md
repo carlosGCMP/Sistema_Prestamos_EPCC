@@ -4,7 +4,7 @@ API para una implementación inicial del sistema de préstamos de bienes de la E
 
 ## Estado actual
 
-La rama `implementacion-basica` restablece un alcance inicial y acotado. Los porcentajes estiman alcance del proyecto; no representan cobertura de pruebas ni preparación para producción.
+La rama `implementacion-basica` fija un alcance inicial y acotado; `feat/frontend-basico` añade la primera interfaz web sobre esa base. Los porcentajes estiman alcance del proyecto; no representan cobertura de pruebas ni preparación para producción.
 
 El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. Incluye una interfaz web básica en HTML, CSS y JavaScript que consume la API. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
 
@@ -53,7 +53,10 @@ frontend/            Interfaz HTML, CSS y JavaScript servida por FastAPI
 migrations/          Historial versionado del esquema PostgreSQL
 tests/               Pruebas automatizadas anteriores, pendientes de ajustar al corte
 docs/                Arquitectura, planificación y entregables
+.vscode/             Preferencias para ocultar artefactos locales del explorador
 ```
+
+La documentación personal y los informes históricos no vigentes se conservan fuera del repositorio, en la carpeta hermana `Sistema_Prestamos_EPCC_material_local/`.
 
 La separación actual es técnica; los módulos activos comparten una API, una base PostgreSQL y transacciones SQLAlchemy. El navegador consume el backend por HTTP en el mismo origen; no se conecta directamente a PostgreSQL. Las capacidades diferidas no deben interpretarse como funciones disponibles.
 

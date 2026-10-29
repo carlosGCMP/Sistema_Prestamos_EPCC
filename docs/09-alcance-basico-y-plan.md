@@ -34,4 +34,4 @@ Se preservaron `migrations/versions/0001`–`0003` y las tablas existentes. No s
 
 ## Estado y límites
 
-El código de este alcance se publica en la rama `implementacion-basica`. El PR anterior del incremento del 25 % se mantiene intacto y no se mezcla con este corte. Los issues y el tablero GitHub organizan el backlog básico. El material anterior permanece en Git como historial; no debe confundirse con la funcionalidad actualmente expuesta.
+La API básica se publica en `implementacion-basica`; la interfaz web inicial se desarrolla en `feat/frontend-basico`. El PR anterior del incremento del 25 % se mantiene intacto y no se mezcla con este corte. Los issues y el tablero GitHub organizan el backlog básico. El material anterior permanece como historial y no debe confundirse con la funcionalidad actualmente expuesta.

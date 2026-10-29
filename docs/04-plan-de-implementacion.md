@@ -8,6 +8,7 @@
 | P0 | Usuarios y autorización | Se registra y desactiva una persona; autenticación y permisos respetan roles. |
 | P0 | Catálogo e inventario | Se administran categorías, tipos, fichas y unidades con códigos únicos. |
 | P0 | Reservas | Se solicita, decide y cancela; no se confirman intervalos solapados para una misma unidad. |
+| P1 | Frontend básico | HTML, CSS y JavaScript nativo consumen API de usuarios, inventario y reservas en el mismo origen. |
 | P1 | Calidad y documentación | Las verificaciones estáticas y las instrucciones de ejecución son reproducibles. |
 | P2 | Capacidades futuras | Préstamos, políticas e incidencias se planifican en incrementos posteriores. |
 
@@ -34,4 +35,4 @@ El trabajo se sigue en el milestone [Implementación básica: usuarios, catálog
 | [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15) | Alinear la suite de pruebas con el alcance reducido. |
 | [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16) | Revisar el esquema heredado y planear su evolución segura. |
 
-Los módulos no activos se conservan fuera del router y no se presentan como implementados. La rama de trabajo para este alcance es `implementacion-basica`.
+Los módulos no activos se conservan fuera del router y no se presentan como implementados. `implementacion-basica` es la rama base; los cambios de interfaz se trabajan en ramas `feat/*`, actualmente `feat/frontend-basico`.
