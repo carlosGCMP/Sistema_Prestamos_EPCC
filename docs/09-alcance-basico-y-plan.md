@@ -21,7 +21,7 @@ La API no expone políticas configurables, préstamos, renovaciones/devoluciones
 
 ## Persistencia y compatibilidad
 
-Se preservaron `migrations/versions/0001`–`0003` y las tablas existentes. No se reescribió una migración aplicada ni se eliminaron datos/tablas localmente. La consecuencia es que el esquema PostgreSQL heredado contiene tablas que el router básico no usa. La limpieza futura exige inventariar el esquema y preparar una migración segura con respaldo, tal como se sigue en el issue [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16).
+Se preservaron las migraciones versionadas `0001` y `0002` y las tablas existentes. No se reescribió una migración aplicada ni se eliminaron datos/tablas localmente. La consecuencia es que el esquema PostgreSQL heredado contiene tablas que el router básico no usa. La limpieza futura exige inventariar el esquema y preparar una migración segura con respaldo, tal como se sigue en el issue [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16).
 
 ## Organización de la implementación
 
