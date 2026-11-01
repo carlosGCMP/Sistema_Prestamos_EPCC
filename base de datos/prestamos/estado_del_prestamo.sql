@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS estado_del_prestamo (
+    id_estado BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_estado VARCHAR(50) NOT NULL UNIQUE
+);

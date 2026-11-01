@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS estado_de_la_reserva (
+    id_estado BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_estado VARCHAR(50) NOT NULL UNIQUE,
+    
+);

@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS tipo_de_bien (
+    id_tipo_bien BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_tipo_bien VARCHAR(100) NOT NULL UNIQUE
+);

@@ -1,0 +1,9 @@
+CREATE TABLE persona (
+    id_persona BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    documento_identidad VARCHAR(20) UNIQUE NOT NULL,
+    correo VARCHAR(150) UNIQUE NOT NULL,
+    telefono VARCHAR(20),
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
