@@ -6,3 +6,4 @@ CREATE TABLE IF NOT EXISTS solicitante (
     estado VARCHAR(20) NOT NULL DEFAULT 'activa',
     fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
+);
