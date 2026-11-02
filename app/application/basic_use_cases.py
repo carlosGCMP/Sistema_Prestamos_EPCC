@@ -2,16 +2,25 @@
 
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.application.schemas import ItemCreate, PersonCreate, UnitCreate
 from app.core.security import hash_password
+from app.infrastructure.modelos_sql import (
+    CaracteristicaDelBien,
+    HistorialDeCambios,
+    PersonalAdministrativo,
+    RegistroDeReserva,
+    TipoDeEvento,
+    UbicacionDelBien,
+)
 from app.infrastructure.models import (
     Account,
+    Administrador,
     AuditEvent,
+    Bien,
     Category,
     ItemCard,
     ItemType,
@@ -21,6 +30,7 @@ from app.infrastructure.models import (
     Reservation,
     ReservationState,
     Role,
+    Solicitante,
     StudentProfile,
     TeacherProfile,
     UnitState,
@@ -45,46 +55,60 @@ def audit(
     actor: Person | None,
     action: str,
     entity_type: str,
-    entity_id: UUID | str,
+    entity_id: int | str,
     details: dict[str, Any] | None = None,
 ) -> None:
-    session.add(
-        AuditEvent(
-            actor_id=actor.id if actor else None,
-            actor_type="USUARIO" if actor else "PROCESO_AUTOMATICO",
-            action=action,
-            entity_type=entity_type,
-            entity_id=str(entity_id),
-            details=details or {},
-        )
+    tipo = session.scalar(
+        select(TipoDeEvento).where(TipoDeEvento.nombre_tipo_evento == "OPERACION")
     )
+    if tipo is None:
+        raise UseCaseError(500, "Falta inicializar el catálogo de auditoría")
+    evento = AuditEvent(
+        actor_id=actor.account.id if actor and actor.account else None,
+        event_type_id=tipo.id_tipo_evento,
+        actor_type="USUARIO" if actor else "PROCESO_AUTOMATICO",
+        action=action,
+        entity_type=entity_type,
+        entity_id=str(entity_id),
+        details=details or {},
+    )
+    session.add(evento)
+    session.flush()
+    session.add(HistorialDeCambios(id_registro=evento.id, descripcion=action))
 
 
-def create_person(session: Session, data: PersonCreate, actor: Person) -> Person:
+def create_person(session: Session, data: PersonCreate, actor: Person | None) -> Person:
     person = Person(
         cui=data.cui,
         document_type=data.document_type,
         document_number=data.document_number,
-        full_name=data.full_name,
+        first_names=data.first_names or data.full_name,
+        last_names=data.last_names or "",
+        phone=data.phone,
         institutional_email=data.institutional_email,
         role=data.role,
         school_affiliation=data.school_affiliation,
         start_date=data.start_date,
+        end_date=data.end_date,
     )
     session.add(person)
     session.flush()
 
-    session.add(
-        Account(
-            person_id=person.id,
-            username=data.username,
-            password_hash=hash_password(data.password),
-        )
+    person.account = Account(
+        person_id=person.id,
+        username=data.username,
+        password_hash=hash_password(data.password),
     )
+    session.flush()
+    person.applicant = Solicitante(person_id=person.id, account_id=person.account.id)
+    if data.is_admin:
+        person.account.administrator = Administrador(account_id=person.account.id)
+    session.flush()
     if data.role == Role.STUDENT:
         session.add(
             StudentProfile(
                 person_id=person.id,
+                applicant_id=person.applicant.id,
                 university_code=data.student_code,
                 program=data.program,
                 semester=data.semester,
@@ -94,48 +118,84 @@ def create_person(session: Session, data: PersonCreate, actor: Person) -> Person
         session.add(
             TeacherProfile(
                 person_id=person.id,
+                applicant_id=person.applicant.id,
                 institutional_code=data.teacher_code,
                 specialty=data.specialty,
+                department=data.department,
+                position=data.position,
             )
         )
-    audit(session, actor, "PERSONA_REGISTRADA", "Person", person.id)
+    else:
+        session.add(
+            PersonalAdministrativo(
+                id_solicitante=person.applicant.id,
+                id_persona=person.id,
+                codigo_personal=data.staff_code or data.document_number,
+                departamento=data.department,
+                cargo=data.position,
+            )
+        )
+    audit(session, actor or person, "PERSONA_REGISTRADA", "Persona", person.id)
     return person
 
 
-def new_category(session: Session, name: str, description: str | None, actor: Person) -> Category:
-    category = Category(name=name, description=description)
+def new_category(
+    session: Session, name: str, description: str | None, actor: Person, item_type_id: int
+) -> Category:
+    tipo = session.get(ItemType, item_type_id)
+    if tipo is None or not tipo.active:
+        raise UseCaseError(404, "Tipo de bien no encontrado o inactivo")
+    category = Category(name=name, description=description, item_type_id=tipo.id)
     session.add(category)
     session.flush()
-    audit(session, actor, "CATEGORIA_CREADA", "Category", category.id)
+    audit(session, actor, "CATEGORIA_CREADA", "CategoriaDelBien", category.id)
     return category
 
 
-def new_item_type(
-    session: Session, name: str, category_id: UUID, lendable: bool, actor: Person
-) -> ItemType:
-    category = session.get(Category, category_id)
-    if category is None or not category.active:
-        raise UseCaseError(404, "Categoría no encontrada o inactiva")
-    item_type = ItemType(name=name, category_id=category.id, lendable=lendable)
+def new_item_type(session: Session, name: str, lendable: bool, actor: Person) -> ItemType:
+    item_type = ItemType(name=name, lendable=lendable)
     session.add(item_type)
     session.flush()
-    audit(session, actor, "TIPO_BIEN_CREADO", "ItemType", item_type.id)
+    audit(session, actor, "TIPO_BIEN_CREADO", "TipoDeBien", item_type.id)
     return item_type
 
 
 def new_item(session: Session, data: ItemCreate, actor: Person) -> ItemCard:
-    item_type = session.get(ItemType, data.item_type_id)
-    if item_type is None or not item_type.active:
-        raise UseCaseError(404, "Tipo de bien no encontrado o inactivo")
-    item = ItemCard(
-        item_type_id=item_type.id,
-        name=data.name,
-        description=data.description,
-        attributes=data.attributes,
+    categoria = session.scalar(
+        select(Category).where(Category.id == data.category_id).with_for_update()
     )
+    if categoria is None or not categoria.active or not categoria.item_type.active:
+        raise UseCaseError(404, "Categoría o tipo de bien no encontrado o inactivo")
+    if actor.applicant is None:
+        raise UseCaseError(409, "El responsable no tiene un registro de solicitante")
+    item = ItemCard(
+        bien=Bien(
+            category_id=categoria.id,
+            name=data.name,
+            description=data.description,
+            attributes=data.attributes,
+        ),
+        applicant_id=actor.applicant.id,
+    )
+    existentes = set(
+        session.scalars(
+            select(CaracteristicaDelBien.nombre_caracteristica).where(
+                CaracteristicaDelBien.id_categoria == categoria.id
+            )
+        )
+    )
+    for nombre in data.attributes:
+        if not nombre.strip() or len(nombre) > 100:
+            raise UseCaseError(
+                422, "El nombre de cada característica debe tener de 1 a 100 caracteres"
+            )
+        if nombre not in existentes:
+            session.add(
+                CaracteristicaDelBien(id_categoria=categoria.id, nombre_caracteristica=nombre)
+            )
     session.add(item)
     session.flush()
-    audit(session, actor, "FICHA_BIEN_CREADA", "ItemCard", item.id)
+    audit(session, actor, "FICHA_BIEN_CREADA", "FichaDeBien", item.id)
     return item
 
 
@@ -143,6 +203,8 @@ def new_unit(session: Session, data: UnitCreate, actor: Person) -> PhysicalUnit:
     item = session.get(ItemCard, data.item_card_id)
     if item is None or not item.active:
         raise UseCaseError(404, "Ficha de bien no encontrada o inactiva")
+    if session.scalar(select(PhysicalUnit.id).where(PhysicalUnit.item_card_id == item.id)):
+        raise UseCaseError(409, "La ficha ya tiene una unidad física; registra una ficha nueva")
     unit = PhysicalUnit(
         item_card_id=item.id,
         inventory_code=data.inventory_code,
@@ -151,17 +213,19 @@ def new_unit(session: Session, data: UnitCreate, actor: Person) -> PhysicalUnit:
         custody=data.custody,
         condition=data.condition,
         accessories=data.accessories,
+        acquisition_date=data.acquisition_date,
     )
     session.add(unit)
     session.flush()
-    audit(session, actor, "UNIDAD_FISICA_CREADA", "PhysicalUnit", unit.id)
+    session.add(UbicacionDelBien(id_unidad_fisica=unit.id, ubicacion=unit.location))
+    audit(session, actor, "UNIDAD_FISICA_CREADA", "UnidadFisica", unit.id)
     return unit
 
 
 def create_reservation(
     session: Session,
     applicant: Person,
-    unit_id: UUID,
+    unit_id: int,
     starts_at: datetime,
     ends_at: datetime,
     intended_use: str,
@@ -176,6 +240,7 @@ def create_reservation(
         applicant.state != PersonState.ACTIVE
         or applicant.account is None
         or not applicant.account.active
+        or applicant.applicant is None
     ):
         raise UseCaseError(409, "Se requiere una cuenta de usuario activa")
 
@@ -195,7 +260,7 @@ def create_reservation(
         raise UseCaseError(409, "La unidad no está disponible para reservar")
 
     reservation = Reservation(
-        applicant_id=applicant.id,
+        applicant_id=applicant.applicant.id,
         unit_id=unit.id,
         starts_at=starts_at,
         ends_at=ends_at,
@@ -203,14 +268,17 @@ def create_reservation(
     )
     session.add(reservation)
     session.flush()
-    audit(session, applicant, "RESERVA_SOLICITADA", "Reservation", reservation.id)
+    audit(session, applicant, "RESERVA_SOLICITADA", "SolicitudDeReserva", reservation.id)
     return reservation
 
 
-def _active_person(session: Session, person_id: UUID) -> Person:
+def _active_person(session: Session, applicant_id: int) -> Person:
+    solicitante = session.get(Solicitante, applicant_id)
+    if solicitante is None:
+        raise UseCaseError(409, "Solicitante no encontrado")
     person = session.scalar(
         select(Person)
-        .where(Person.id == person_id)
+        .where(Person.id == solicitante.person_id)
         .with_for_update()
         .execution_options(populate_existing=True)
     )
@@ -219,7 +287,7 @@ def _active_person(session: Session, person_id: UUID) -> Person:
     return person
 
 
-def _active_unit(session: Session, unit_id: UUID) -> PhysicalUnit:
+def _active_unit(session: Session, unit_id: int) -> PhysicalUnit:
     unit = session.scalar(
         select(PhysicalUnit)
         .where(PhysicalUnit.id == unit_id)
@@ -235,7 +303,7 @@ def _active_unit(session: Session, unit_id: UUID) -> PhysicalUnit:
 
 def decide_reservation(
     session: Session,
-    reservation_id: UUID,
+    reservation_id: int,
     administrator: Person,
     confirm: bool,
     reason: str | None,
@@ -295,6 +363,16 @@ def decide_reservation(
         ):
             raise UseCaseError(409, "La unidad no está habilitada para reservas")
         reservation.state = ReservationState.CONFIRMED
+        session.add(
+            RegistroDeReserva(
+                id_solicitud=reservation.id,
+                id_solicitante=reservation.applicant_id,
+                id_unidad_fisica=reservation.unit_id,
+                fecha_reserva=reservation.starts_at,
+                fecha_expiracion=reservation.ends_at,
+                estado=ReservationState.CONFIRMED.value,
+            )
+        )
     else:
         reservation.state = ReservationState.REJECTED
         reservation.decision_reason = reason
@@ -303,7 +381,7 @@ def decide_reservation(
         session,
         administrator,
         "RESERVA_CONFIRMADA" if confirm else "RESERVA_RECHAZADA",
-        "Reservation",
+        "SolicitudDeReserva",
         reservation.id,
         {"reason": reason} if reason else {},
     )
@@ -311,7 +389,7 @@ def decide_reservation(
 
 
 def cancel_reservation(
-    session: Session, reservation_id: UUID, actor: Person, reason: str | None
+    session: Session, reservation_id: int, actor: Person, reason: str | None
 ) -> Reservation:
     reservation = session.scalar(
         select(Reservation)
@@ -321,11 +399,17 @@ def cancel_reservation(
     )
     if reservation is None:
         raise UseCaseError(404, "Reserva no encontrada")
-    if reservation.applicant_id != actor.id and actor.role != Role.INVENTORY_ADMIN:
+    titular = actor.applicant is not None and reservation.applicant_id == actor.applicant.id
+    if not titular and not actor.is_admin:
         raise UseCaseError(403, "Solo el titular o personal autorizado puede cancelar la reserva")
     if reservation.state not in (ReservationState.PENDING, ReservationState.CONFIRMED):
         raise UseCaseError(409, "La reserva ya no puede cancelarse")
     reservation.state = ReservationState.CANCELLED
     reservation.decision_reason = reason
-    audit(session, actor, "RESERVA_CANCELADA", "Reservation", reservation.id)
+    registro = session.scalar(
+        select(RegistroDeReserva).where(RegistroDeReserva.id_solicitud == reservation.id)
+    )
+    if registro is not None:
+        registro.estado = ReservationState.CANCELLED.value
+    audit(session, actor, "RESERVA_CANCELADA", "SolicitudDeReserva", reservation.id)
     return reservation

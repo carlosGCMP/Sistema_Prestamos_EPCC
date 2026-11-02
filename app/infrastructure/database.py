@@ -62,6 +62,7 @@ def inicializar_base_datos(motor: Engine | None = None) -> Engine:
     """Valida tablas existentes y crea solo las faltantes; no ejecuta migraciones."""
     # Los modelos deben registrarse antes de consultar Base.metadata.
     import app.infrastructure.models  # noqa: F401
+    from app.infrastructure.catalogos import cargar_catalogos
 
     motor = motor if motor is not None else obtener_motor()
     with motor.begin() as conexion:
@@ -70,6 +71,7 @@ def inicializar_base_datos(motor: Engine | None = None) -> Engine:
             conexion.execute(text("SELECT pg_advisory_xact_lock(73421001)"))
         validar_esquema(conexion, Base.metadata)
         Base.metadata.create_all(bind=conexion)
+        cargar_catalogos(conexion)
     return motor
 
 

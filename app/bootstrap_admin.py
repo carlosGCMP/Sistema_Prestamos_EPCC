@@ -1,50 +1,44 @@
-"""Create the first administrative identity interactively."""
+"""Crea la primera persona, cuenta, solicitante y atribución administrativa."""
 
 from datetime import date
 from getpass import getpass
 
 from sqlalchemy import select
 
-from app.application.basic_use_cases import audit
-from app.core.security import hash_password
+from app.application.basic_use_cases import create_person
+from app.application.schemas import PersonCreate
 from app.infrastructure.database import abrir_sesion, inicializar_base_datos
-from app.infrastructure.models import Account, Person, Role
+from app.infrastructure.models import Administrador, Role
 
 
 def main() -> None:
     inicializar_base_datos()
-    with abrir_sesion() as session:
-        if session.scalar(
-            select(Account.id).join(Person).where(Person.role == Role.INVENTORY_ADMIN)
-        ):
+    with abrir_sesion() as sesion:
+        if sesion.scalar(select(Administrador.id)):
             raise SystemExit("Ya existe una cuenta administrativa; no se creó otra.")
-        cui = input("CUI: ").strip()
-        document_type = input("Tipo de documento [DNI]: ").strip() or "DNI"
-        document_number = input("Número de documento: ").strip()
-        full_name = input("Nombre completo: ").strip()
-        email = input("Correo institucional: ").strip()
-        username = input("Usuario: ").strip()
-        password = getpass("Contraseña (mínimo 12 caracteres): ")
-        confirmation = getpass("Confirmar contraseña: ")
-        if password != confirmation:
+        documento = input("Número de documento: ").strip()
+        nombres = input("Nombres: ").strip()
+        apellidos = input("Apellidos: ").strip()
+        correo = input("Correo institucional: ").strip()
+        usuario = input("Usuario: ").strip()
+        clave = getpass("Contraseña (mínimo 12 caracteres): ")
+        if clave != getpass("Confirmar contraseña: "):
             raise SystemExit("Las contraseñas no coinciden.")
-        person = Person(
-            cui=cui,
-            document_type=document_type,
-            document_number=document_number,
-            full_name=full_name,
-            institutional_email=email,
-            role=Role.INVENTORY_ADMIN,
+        datos = PersonCreate(
+            document_type="DNI",
+            document_number=documento,
+            first_names=nombres,
+            last_names=apellidos,
+            institutional_email=correo,
+            role=Role.ADMINISTRATIVE,
+            is_admin=True,
             school_affiliation="EPCC",
             start_date=date.today(),
+            username=usuario,
+            password=clave,
         )
-        session.add(person)
-        session.flush()
-        session.add(
-            Account(person_id=person.id, username=username, password_hash=hash_password(password))
-        )
-        audit(session, person, "ADMINISTRADOR_INICIAL_CREADO", "Person", person.id)
-    print(f"Cuenta administrativa '{username}' creada.")
+        create_person(sesion, datos, None)
+    print(f"Cuenta administrativa '{usuario}' creada.")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
-from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -54,8 +53,10 @@ def get_current_account(
         payload: dict[str, Any] = jwt.decode(
             token, get_settings().jwt_secret.get_secret_value(), algorithms=["HS256"]
         )
-        account_id = UUID(payload["sub"])
+        account_id = int(payload["sub"])
         session_version = int(payload["session_version"])
+        if not 0 < account_id <= 9223372036854775807:
+            raise ValueError("Identificador fuera de rango")
     except (jwt.PyJWTError, KeyError, TypeError, ValueError) as error:
         raise unauthorized from error
 
@@ -84,7 +85,15 @@ def require_roles(*roles: Role) -> Callable[..., Person]:
 
 
 CurrentAccount = Annotated[Account, Depends(get_current_account)]
-AdminActor = Annotated[Person, Depends(require_roles(Role.INVENTORY_ADMIN))]
+
+
+def require_admin(account: CurrentAccount) -> Person:
+    if not account.person.is_admin:
+        raise HTTPException(status_code=403, detail="Se requiere atribución administrativa")
+    return account.person
+
+
+AdminActor = Annotated[Person, Depends(require_admin)]
 MemberActor = Annotated[
     Person,
     Depends(require_roles(Role.STUDENT, Role.TEACHER, Role.ADMINISTRATIVE, Role.INVENTORY_ADMIN)),

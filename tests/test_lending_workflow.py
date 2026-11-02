@@ -1,166 +1,108 @@
-from datetime import UTC, date, datetime, timedelta
+"""Flujo operativo de la API sobre el esquema SQL español (sin rutas históricas)."""
 
+from datetime import UTC, datetime, timedelta
+
+from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.security import hash_password
-from app.infrastructure.models import Account, Person, Role
+from app.infrastructure.modelos_sql import (
+    CaracteristicaDelBien,
+    HistorialDeCambios,
+    RegistroDeReserva,
+    UbicacionDelBien,
+)
+from app.infrastructure.models import Account, Bien, Person
 
 
-def test_policy_reservation_loan_renewal_and_return(
-    client, session_factory: sessionmaker[Session]
-) -> None:  # type: ignore[no-untyped-def]
-    with session_factory.begin() as session:
-        admin = Person(
-            cui="cui-admin",
-            document_type="DNI",
-            document_number="87654321",
-            full_name="Administradora EPCC",
-            institutional_email="admin@epcc.edu.pe",
-            role=Role.INVENTORY_ADMIN,
-            school_affiliation="EPCC",
-            start_date=date(2026, 1, 1),
-        )
-        session.add(admin)
-        session.flush()
-        session.add(
-            Account(
-                person_id=admin.id,
-                username="admin",
-                password_hash=hash_password("clave-administrativa-segura-2026"),
-            )
-        )
-    login = client.post(
-        "/auth/token", data={"username": "admin", "password": "clave-administrativa-segura-2026"}
-    )
-    admin_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
-    assert login.status_code == 200
-
-    student = client.post(
-        "/people",
-        headers=admin_headers,
-        json={
-            "cui": "cui-student",
-            "document_type": "DNI",
-            "document_number": "11223344",
-            "full_name": "Estudiante de Prueba",
-            "institutional_email": "student@epcc.edu.pe",
-            "role": "ESTUDIANTE",
-            "school_affiliation": "EPCC",
-            "start_date": "2026-01-01",
-            "username": "student",
-            "password": "clave-estudiantil-segura-2026",
-            "student_code": "20260001",
-            "program": "Ciencia de la Computación",
-            "semester": 5,
-        },
-    )
-    assert student.status_code == 201
-
-    category = client.post(
-        "/inventory/categories", headers=admin_headers, json={"name": "Informática"}
-    )
-    item_type = client.post(
-        "/inventory/types",
-        headers=admin_headers,
-        json={
-            "name": "Laptop",
-            "category_id": category.json()["id"],
-            "lendable": True,
-        },
-    )
-    item = client.post(
-        "/inventory/items",
-        headers=admin_headers,
-        json={
-            "item_type_id": item_type.json()["id"],
-            "name": "Laptop de préstamo",
-        },
-    )
-    unit = client.post(
-        "/inventory/units",
-        headers=admin_headers,
-        json={
-            "item_card_id": item.json()["id"],
-            "inventory_code": "EPCC-LAP-001",
-            "location": "Almacén EPCC",
-            "custody": "Responsable de laboratorio",
-            "condition": "Operativa",
-            "accessories": ["cargador"],
-        },
-    )
-    assert unit.status_code == 201
-
-    policy = client.post(
-        "/policies",
-        headers=admin_headers,
-        json={
-            "name": "Préstamo estándar",
-            "role": "ESTUDIANTE",
-            "max_units": 1,
-            "max_duration": 1,
-            "duration_unit": "DIAS",
-            "allowed_modes": ["RETIRO"],
-            "allows_renewal": True,
-            "max_renewals": 1,
-            "valid_from": (datetime.now(UTC) - timedelta(days=1)).isoformat(),
-        },
-    )
-    assert policy.status_code == 201
-
-    student_token = client.post(
-        "/auth/token", data={"username": "student", "password": "clave-estudiantil-segura-2026"}
-    ).json()["access_token"]
-    student_headers = {"Authorization": f"Bearer {student_token}"}
-    reserved_from = datetime.now(UTC) + timedelta(days=2)
-    reserved_until = reserved_from + timedelta(hours=3)
-    reservation = client.post(
+def test_reservar_confirmar_cancelar_y_conservar_relaciones_sql(
+    client: TestClient,
+    flujo_basico: dict[str, str],
+    session_factory: sessionmaker[Session],
+) -> None:
+    admin = {"Authorization": flujo_basico["admin"]}
+    estudiante = {"Authorization": flujo_basico["estudiante"]}
+    inicio = datetime.now(UTC) + timedelta(days=1)
+    respuesta = client.post(
         "/reservations",
-        headers=student_headers,
+        headers=estudiante,
         json={
-            "unit_id": unit.json()["id"],
-            "starts_at": reserved_from.isoformat(),
-            "ends_at": reserved_until.isoformat(),
-            "intended_use": "Proyecto académico",
+            "unit_id": flujo_basico["unidad"],
+            "starts_at": inicio.isoformat(),
+            "ends_at": (inicio + timedelta(hours=2)).isoformat(),
+            "intended_use": "Estudio",
         },
     )
-    assert reservation.status_code == 201
-    decision = client.post(
-        f"/reservations/{reservation.json()['id']}/decision",
-        headers=admin_headers,
-        json={"confirm": True},
+    assert respuesta.status_code == 201, respuesta.text
+    reserva = respuesta.json()
+    assert reserva["applicant_id"] == flujo_basico["solicitante"]
+    confirmada = client.post(
+        f"/reservations/{reserva['id']}/decision", headers=admin, json={"confirm": True}
     )
-    assert decision.status_code == 200, decision.json()
-    cancelled = client.post(
-        f"/reservations/{reservation.json()['id']}/cancel", headers=student_headers
+    assert confirmada.status_code == 200, confirmada.text
+    with session_factory() as sesion:
+        registro = sesion.scalar(
+            select(RegistroDeReserva).where(RegistroDeReserva.id_solicitud == int(reserva["id"]))
+        )
+        assert registro is not None and registro.estado == "CONFIRMADA"
+        assert sesion.scalar(select(Bien.name)) == "Laptop"
+        assert sesion.scalar(select(CaracteristicaDelBien.nombre_caracteristica)) == "RAM"
+        assert sesion.scalar(select(UbicacionDelBien.ubicacion)) == "Laboratorio"
+        assert sesion.scalar(select(HistorialDeCambios.id_historial)) is not None
+        persona = sesion.get(Person, int(flujo_basico["persona"]))
+        assert persona is not None and persona.student_profile is not None
+        assert persona.student_profile.applicant_id == int(flujo_basico["solicitante"])
+    cancelada = client.post(f"/reservations/{reserva['id']}/cancel", headers=estudiante)
+    assert cancelada.status_code == 200, cancelada.text
+    with session_factory() as sesion:
+        assert sesion.scalar(select(RegistroDeReserva.estado)) == "CANCELADA"
+    assert (
+        client.get(
+            "/inventory/units", headers=estudiante, params={"item_type_id": flujo_basico["tipo"]}
+        ).status_code
+        == 200
     )
-    assert cancelled.status_code == 200
 
-    due = datetime.now(UTC) + timedelta(hours=2)
-    loan = client.post(
-        "/loans",
-        headers=admin_headers,
+
+def test_una_unidad_por_ficha_y_permisos_administrativos(
+    client: TestClient,
+    flujo_basico: dict[str, str],
+) -> None:
+    admin = {"Authorization": flujo_basico["admin"]}
+    estudiante = {"Authorization": flujo_basico["estudiante"]}
+    repetida = client.post(
+        "/inventory/units",
+        headers=admin,
         json={
-            "applicant_id": student.json()["id"],
-            "unit_id": unit.json()["id"],
-            "due_at": due.isoformat(),
-            "use_mode": "RETIRO",
-            "delivered_condition": "Operativa",
-            "delivered_accessories": ["cargador"],
+            "item_card_id": flujo_basico["ficha"],
+            "inventory_code": "EPCC-002",
+            "serial_number": "SERIE-002",
+            "location": "Laboratorio",
+            "custody": "EPCC",
+            "condition": "Operativa",
         },
     )
-    assert loan.status_code == 201
-    renewed_due = due + timedelta(hours=4)
-    renewal = client.post(
-        f"/loans/{loan.json()['id']}/renewals",
-        headers=admin_headers,
-        json={"new_due_at": renewed_due.isoformat()},
+    assert repetida.status_code == 409
+    assert (
+        client.post("/inventory/types", headers=estudiante, json={"name": "Prohibido"}).status_code
+        == 403
     )
-    assert renewal.status_code == 201
-    returned = client.post(
-        f"/loans/{loan.json()['id']}/return",
-        headers=admin_headers,
-        json={"condition": "Operativa", "accessories": ["cargador"], "disposition": "DISPONIBLE"},
+    assert client.get("/people", headers=estudiante).status_code == 403
+    assert client.get("/me", headers=admin).json()["is_admin"] is True
+    assert client.get("/me", headers=estudiante).json()["is_admin"] is False
+
+
+def test_rechaza_ids_invalidos_y_nombre_en_tipo_inexistente(
+    client: TestClient,
+    flujo_basico: dict[str, str],
+    session_factory: sessionmaker[Session],
+) -> None:
+    admin = {"Authorization": flujo_basico["admin"]}
+    assert client.get("/people/no-es-un-id", headers=admin).status_code == 422
+    assert client.get("/people/9223372036854775808", headers=admin).status_code == 422
+    respuesta = client.post(
+        "/inventory/categories", headers=admin, json={"name": "Huérfana", "item_type_id": "999999"}
     )
-    assert returned.status_code == 200
-    assert returned.json()["state"] == "DEVUELTO"
-    assert client.get("/audit", headers=admin_headers).status_code == 200
+    assert respuesta.status_code == 404
+    with session_factory() as sesion:
+        assert len(sesion.scalars(select(Account)).all()) == 2

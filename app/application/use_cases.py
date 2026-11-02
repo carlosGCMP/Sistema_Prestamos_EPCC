@@ -1,17 +1,14 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.application import basic_use_cases as basicos
 from app.application.schemas import PersonCreate, PolicyCreate
-from app.core.security import hash_password
 from app.infrastructure.models import (
     AcademicRecord,
-    Account,
-    AuditEvent,
     Category,
     ItemCard,
     ItemType,
@@ -25,8 +22,7 @@ from app.infrastructure.models import (
     Reservation,
     ReservationState,
     Role,
-    StudentProfile,
-    TeacherProfile,
+    Solicitante,
     TimeUnit,
     UnitState,
 )
@@ -54,23 +50,17 @@ def audit(
     actor: Person | None,
     action: str,
     entity_type: str,
-    entity_id: UUID | str,
+    entity_id: int | str,
     details: dict[str, Any] | None = None,
 ) -> None:
-    session.add(
-        AuditEvent(
-            actor_id=actor.id if actor else None,
-            actor_type="USUARIO" if actor else "PROCESO_AUTOMATICO",
-            action=action,
-            entity_type=entity_type,
-            entity_id=str(entity_id),
-            details=details or {},
-        )
-    )
+    basicos.audit(session, actor, action, entity_type, entity_id, details)
 
 
-def active_person(session: Session, person_id: UUID, *, lock: bool = False) -> Person:
-    statement = select(Person).where(Person.id == person_id)
+def active_person(session: Session, person_id: int, *, lock: bool = False) -> Person:
+    solicitante = session.get(Solicitante, person_id)
+    if solicitante is None:
+        raise UseCaseError(404, "Solicitante no encontrado")
+    statement = select(Person).where(Person.id == solicitante.person_id)
     if lock:
         statement = statement.with_for_update()
     person = session.scalar(statement)
@@ -81,7 +71,7 @@ def active_person(session: Session, person_id: UUID, *, lock: bool = False) -> P
     return person
 
 
-def active_unit(session: Session, unit_id: UUID, *, lock: bool = False) -> PhysicalUnit:
+def active_unit(session: Session, unit_id: int, *, lock: bool = False) -> PhysicalUnit:
     statement = select(PhysicalUnit).where(PhysicalUnit.id == unit_id)
     if lock:
         statement = statement.with_for_update()
@@ -96,7 +86,7 @@ def active_unit(session: Session, unit_id: UUID, *, lock: bool = False) -> Physi
 def resolve_policy(
     session: Session,
     role: Role,
-    item_type_id: UUID,
+    item_type_id: int,
     at: datetime,
     *,
     limit_only: bool = False,
@@ -138,7 +128,7 @@ def assert_eligible(session: Session, person: Person, policy: LoanPolicy, at: da
     if person.account is None or not person.account.active:
         raise UseCaseError(409, "La persona no tiene una cuenta activa")
     if policy.requires_academic_eligibility and person.role == Role.STUDENT:
-        record = session.get(AcademicRecord, person.id)
+        record = session.scalar(select(AcademicRecord).where(AcademicRecord.person_id == person.id))
         if (
             record is None
             or record.status.upper() not in {"MATRICULADO", "VIGENTE", "ACTIVO"}
@@ -159,12 +149,12 @@ def assert_unit_type_lendable(session: Session, unit: PhysicalUnit) -> ItemType:
 
 def ensure_no_unit_conflict(
     session: Session,
-    unit_id: UUID,
+    unit_id: int,
     starts_at: datetime,
     ends_at: datetime,
     *,
-    except_reservation_id: UUID | None = None,
-    except_loan_id: UUID | None = None,
+    except_reservation_id: int | None = None,
+    except_loan_id: int | None = None,
 ) -> None:
     overlap = (Reservation.starts_at < ends_at) & (Reservation.ends_at > starts_at)
     statement = select(Reservation.id).where(
@@ -190,13 +180,13 @@ def ensure_no_unit_conflict(
 
 def assert_applicant_capacity(
     session: Session,
-    applicant_id: UUID,
+    applicant_id: int,
     starts_at: datetime,
     ends_at: datetime,
     max_units: int,
     *,
-    except_reservation_id: UUID | None = None,
-    except_loan_id: UUID | None = None,
+    except_reservation_id: int | None = None,
+    except_loan_id: int | None = None,
 ) -> None:
     events: list[tuple[datetime, int]] = [(starts_at, 1), (ends_at, -1)]
     open_loan_query = select(Loan).where(
@@ -233,44 +223,7 @@ def assert_applicant_capacity(
 
 
 def create_person(session: Session, data: PersonCreate, actor: Person) -> Person:
-    person = Person(
-        cui=data.cui,
-        document_type=data.document_type,
-        document_number=data.document_number,
-        full_name=data.full_name,
-        institutional_email=data.institutional_email,
-        role=data.role,
-        school_affiliation=data.school_affiliation,
-        start_date=data.start_date,
-    )
-    session.add(person)
-    session.flush()
-    if data.username and data.password:
-        account = Account(
-            person_id=person.id,
-            username=data.username,
-            password_hash=hash_password(data.password),
-        )
-        session.add(account)
-    if data.role == Role.STUDENT:
-        session.add(
-            StudentProfile(
-                person_id=person.id,
-                university_code=data.student_code,
-                program=data.program,
-                semester=data.semester,
-            )
-        )
-    elif data.role == Role.TEACHER:
-        session.add(
-            TeacherProfile(
-                person_id=person.id,
-                institutional_code=data.teacher_code,
-                specialty=data.specialty,
-            )
-        )
-    audit(session, actor, "PERSONA_REGISTRADA", "Persona", person.id, {"role": person.role.value})
-    return person
+    return basicos.create_person(session, data, actor)
 
 
 def policy_snapshot(policy: LoanPolicy) -> dict[str, Any]:
@@ -353,7 +306,7 @@ def create_policy(session: Session, data: PolicyCreate, actor: Person) -> LoanPo
 def create_reservation(
     session: Session,
     applicant: Person,
-    unit_id: UUID,
+    unit_id: int,
     starts_at: datetime,
     ends_at: datetime,
     use: str,
@@ -370,7 +323,7 @@ def create_reservation(
     if ends_at - starts_at > max_duration_delta(policy):
         raise UseCaseError(422, "La reserva supera la duración máxima permitida")
     reservation = Reservation(
-        applicant_id=applicant.id,
+        applicant_id=applicant.applicant.id if applicant.applicant else None,
         unit_id=unit.id,
         starts_at=starts_at,
         ends_at=ends_at,
@@ -383,7 +336,7 @@ def create_reservation(
 
 
 def decide_reservation(
-    session: Session, reservation_id: UUID, administrator: Person, confirm: bool, reason: str | None
+    session: Session, reservation_id: int, administrator: Person, confirm: bool, reason: str | None
 ) -> Reservation:
     reservation = session.scalar(
         select(Reservation).where(Reservation.id == reservation_id).with_for_update()
@@ -446,14 +399,16 @@ def decide_reservation(
 
 
 def cancel_reservation(
-    session: Session, reservation_id: UUID, actor: Person, reason: str | None
+    session: Session, reservation_id: int, actor: Person, reason: str | None
 ) -> Reservation:
     reservation = session.scalar(
         select(Reservation).where(Reservation.id == reservation_id).with_for_update()
     )
     if reservation is None:
         raise UseCaseError(404, "Reserva no encontrada")
-    if reservation.applicant_id != actor.id and actor.role != Role.INVENTORY_ADMIN:
+    if (
+        actor.applicant is None or reservation.applicant_id != actor.applicant.id
+    ) and not actor.is_admin:
         raise UseCaseError(403, "Solo el titular o personal autorizado puede cancelar la reserva")
     if reservation.state not in (ReservationState.PENDING, ReservationState.CONFIRMED):
         raise UseCaseError(409, "La reserva ya no puede cancelarse")
@@ -491,7 +446,8 @@ def create_loan(session: Session, data: Any, administrator: Person) -> Loan:
             reservation is None
             or reservation.state != ReservationState.CONFIRMED
             or reservation.unit_id != unit.id
-            or reservation.applicant_id != applicant.id
+            or applicant.applicant is None
+            or reservation.applicant_id != applicant.applicant.id
             or not (
                 require_aware(reservation.starts_at, "starts_at")
                 <= starts_at
@@ -511,15 +467,17 @@ def create_loan(session: Session, data: Any, administrator: Person) -> Loan:
     limit_policy = resolve_policy(session, applicant.role, item_type.id, starts_at, limit_only=True)
     assert_applicant_capacity(
         session,
-        applicant.id,
+        data.applicant_id,
         starts_at,
         due_at,
         limit_policy.max_units,
         except_reservation_id=reservation.id if reservation else None,
     )
     loan = Loan(
-        applicant_id=applicant.id,
-        administrator_id=administrator.id,
+        applicant_id=data.applicant_id,
+        administrator_id=administrator.account.administrator.id
+        if administrator.account and administrator.account.administrator
+        else None,
         unit_id=unit.id,
         origin_reservation_id=reservation.id if reservation else None,
         starts_at=starts_at,
@@ -546,7 +504,7 @@ def create_loan(session: Session, data: Any, administrator: Person) -> Loan:
 
 
 def renew_loan(
-    session: Session, loan_id: UUID, new_due_at: datetime, administrator: Person
+    session: Session, loan_id: int, new_due_at: datetime, administrator: Person
 ) -> Renewal:
     loan = session.scalar(select(Loan).where(Loan.id == loan_id).with_for_update())
     if loan is None:
@@ -586,7 +544,9 @@ def renew_loan(
         sequence=renewal_count + 1,
         previous_due_at=old_due,
         new_due_at=new_due,
-        administrator_id=administrator.id,
+        administrator_id=administrator.account.administrator.id
+        if administrator.account and administrator.account.administrator
+        else None,
     )
     loan.due_at = new_due
     session.add(renewal)
@@ -602,7 +562,7 @@ def renew_loan(
     return renewal
 
 
-def return_loan(session: Session, loan_id: UUID, data: Any, administrator: Person) -> Loan:
+def return_loan(session: Session, loan_id: int, data: Any, administrator: Person) -> Loan:
     loan = session.scalar(select(Loan).where(Loan.id == loan_id).with_for_update())
     if loan is None:
         raise UseCaseError(404, "Préstamo no encontrado")
@@ -634,63 +594,19 @@ def return_loan(session: Session, loan_id: UUID, data: Any, administrator: Perso
     return loan
 
 
-def new_category(session: Session, name: str, description: str | None, actor: Person) -> Category:
-    category = Category(name=name, description=description)
-    session.add(category)
-    session.flush()
-    audit(session, actor, "CATEGORIA_CREADA", "Category", category.id)
-    return category
+def new_category(
+    session: Session, name: str, description: str | None, actor: Person, item_type_id: int
+) -> Category:
+    return basicos.new_category(session, name, description, actor, item_type_id)
 
 
-def new_item_type(
-    session: Session, name: str, category_id: UUID, lendable: bool, actor: Person
-) -> ItemType:
-    if session.get(Category, category_id) is None:
-        raise UseCaseError(404, "Categoría no encontrada")
-    item_type = ItemType(name=name, category_id=category_id, lendable=lendable)
-    session.add(item_type)
-    session.flush()
-    audit(session, actor, "TIPO_BIEN_CREADO", "ItemType", item_type.id)
-    return item_type
+def new_item_type(session: Session, name: str, lendable: bool, actor: Person) -> ItemType:
+    return basicos.new_item_type(session, name, lendable, actor)
 
 
 def new_item(session: Session, data: Any, actor: Person) -> ItemCard:
-    item_type = session.get(ItemType, data.item_type_id)
-    if item_type is None or not item_type.active:
-        raise UseCaseError(404, "Tipo de bien no encontrado o inactivo")
-    item = ItemCard(
-        item_type_id=item_type.id,
-        name=data.name,
-        description=data.description,
-        attributes=data.attributes,
-    )
-    session.add(item)
-    session.flush()
-    audit(session, actor, "FICHA_BIEN_CREADA", "ItemCard", item.id)
-    return item
+    return basicos.new_item(session, data, actor)
 
 
 def new_unit(session: Session, data: Any, actor: Person) -> PhysicalUnit:
-    item = session.get(ItemCard, data.item_card_id)
-    if item is None or not item.active:
-        raise UseCaseError(404, "Ficha de bien no encontrada o inactiva")
-    unit = PhysicalUnit(
-        item_card_id=data.item_card_id,
-        inventory_code=data.inventory_code,
-        serial_number=data.serial_number,
-        location=data.location,
-        custody=data.custody,
-        condition=data.condition,
-        accessories=data.accessories,
-    )
-    session.add(unit)
-    session.flush()
-    audit(
-        session,
-        actor,
-        "UNIDAD_FISICA_CREADA",
-        "PhysicalUnit",
-        unit.id,
-        {"inventory_code": unit.inventory_code},
-    )
-    return unit
+    return basicos.new_unit(session, data, actor)

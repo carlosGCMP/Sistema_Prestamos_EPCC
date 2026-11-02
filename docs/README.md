@@ -5,6 +5,7 @@
 - [Visión y alcance básico](01-vision-y-alcance.md)
 - [Arquitectura y tecnologías](02-arquitectura-y-tecnologias.md)
 - [Conexión y flujo del aplicativo](11-conexion-y-flujo.md)
+- [Esquema de datos en español y relaciones](12-esquema-espanol.md)
 - Frontend inicial: `../frontend/` (HTML, CSS y JavaScript nativo)
 - [Modelo de dominio básico](03-dominio-y-modulos.md)
 - [Plan de implementación](04-plan-de-implementacion.md)

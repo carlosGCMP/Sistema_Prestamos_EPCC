@@ -2,7 +2,6 @@
 
 from datetime import UTC, datetime
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
 from fastapi.responses import JSONResponse
@@ -27,6 +26,7 @@ from app.application.basic_use_cases import (
 from app.application.schemas import (
     CategoryCreate,
     CategoryOut,
+    Id,
     ItemCreate,
     ItemOut,
     PersonCreate,
@@ -51,6 +51,7 @@ from app.core.settings import get_settings
 from app.infrastructure.database import obtener_sesion
 from app.infrastructure.models import (
     Account,
+    Bien,
     Category,
     ItemCard,
     ItemType,
@@ -58,7 +59,6 @@ from app.infrastructure.models import (
     PersonState,
     PhysicalUnit,
     Reservation,
-    Role,
     UnitState,
 )
 
@@ -119,7 +119,7 @@ def list_people(
 
 
 @router.get("/people/{person_id}", response_model=PersonOut, tags=["usuarios"])
-def get_person(person_id: UUID, _actor: AdminActor, session: SessionDep) -> Person:
+def get_person(person_id: Id, _actor: AdminActor, session: SessionDep) -> Person:
     person = session.get(Person, person_id)
     if person is None:
         raise HTTPException(status_code=404, detail="Persona no encontrada")
@@ -127,7 +127,7 @@ def get_person(person_id: UUID, _actor: AdminActor, session: SessionDep) -> Pers
 
 
 @router.post("/people/{person_id}/deactivate", response_model=PersonOut, tags=["usuarios"])
-def deactivate_person(person_id: UUID, actor: AdminActor, session: SessionDep) -> Person:
+def deactivate_person(person_id: Id, actor: AdminActor, session: SessionDep) -> Person:
     person = session.scalar(
         select(Person)
         .where(Person.id == person_id)
@@ -140,7 +140,7 @@ def deactivate_person(person_id: UUID, actor: AdminActor, session: SessionDep) -
     if person.account:
         person.account.active = False
         person.account.session_version += 1
-    audit(session, actor, "PERSONA_DESACTIVADA", "Person", person.id)
+    audit(session, actor, "PERSONA_DESACTIVADA", "Persona", person.id)
     return person
 
 
@@ -148,7 +148,7 @@ def deactivate_person(person_id: UUID, actor: AdminActor, session: SessionDep) -
     "/inventory/categories", response_model=CategoryOut, status_code=201, tags=["catálogo"]
 )
 def create_category(data: CategoryCreate, actor: AdminActor, session: SessionDep) -> Category:
-    return new_category(session, data.name, data.description, actor)
+    return new_category(session, data.name, data.description, actor, data.item_type_id)
 
 
 @router.get("/inventory/categories", response_model=list[CategoryOut], tags=["catálogo"])
@@ -158,7 +158,7 @@ def list_categories(_actor: MemberActor, session: SessionDep) -> list[Category]:
 
 @router.post("/inventory/types", response_model=TypeOut, status_code=201, tags=["catálogo"])
 def create_type(data: TypeCreate, actor: AdminActor, session: SessionDep) -> ItemType:
-    return new_item_type(session, data.name, data.category_id, data.lendable, actor)
+    return new_item_type(session, data.name, data.lendable, actor)
 
 
 @router.get("/inventory/types", response_model=list[TypeOut], tags=["catálogo"])
@@ -191,7 +191,7 @@ def list_units(
     session: SessionDep,
     search: str | None = Query(default=None, min_length=1, max_length=100),
     state: UnitState | None = None,
-    item_type_id: UUID | None = None,
+    item_type_id: Id | None = None,
     limit: int = Query(default=100, ge=1, le=500),
 ) -> list[PhysicalUnit]:
     statement = select(PhysicalUnit)
@@ -200,7 +200,12 @@ def list_units(
     if state is not None:
         statement = statement.where(PhysicalUnit.state == state)
     if item_type_id is not None:
-        statement = statement.join(ItemCard).where(ItemCard.item_type_id == item_type_id)
+        statement = (
+            statement.join(ItemCard)
+            .join(Bien)
+            .join(Category)
+            .where(Category.item_type_id == item_type_id)
+        )
     return list(session.scalars(statement.order_by(PhysicalUnit.inventory_code).limit(limit)).all())
 
 
@@ -220,8 +225,10 @@ def list_reservations(
     limit: int = Query(default=100, ge=1, le=500),
 ) -> list[Reservation]:
     statement = select(Reservation)
-    if actor.role != Role.INVENTORY_ADMIN:
-        statement = statement.where(Reservation.applicant_id == actor.id)
+    if not actor.is_admin:
+        if actor.applicant is None:
+            return []
+        statement = statement.where(Reservation.applicant_id == actor.applicant.id)
     return list(
         session.scalars(statement.order_by(Reservation.starts_at.desc()).limit(limit)).all()
     )
@@ -233,7 +240,7 @@ def list_reservations(
     tags=["reservas"],
 )
 def decide_reservation_route(
-    reservation_id: UUID,
+    reservation_id: Id,
     data: ReservationDecision,
     actor: AdminActor,
     session: SessionDep,
@@ -247,7 +254,7 @@ def decide_reservation_route(
     tags=["reservas"],
 )
 def cancel_reservation_route(
-    reservation_id: UUID,
+    reservation_id: Id,
     actor: MemberActor,
     session: SessionDep,
     reason: str | None = Query(default=None, max_length=1000),

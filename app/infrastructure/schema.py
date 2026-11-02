@@ -7,6 +7,13 @@ def validar_esquema(conexion: Connection, metadata: MetaData) -> None:
     """Impide inicializar sobre tablas incompatibles antes de crear otras nuevas."""
     inspector = inspect(conexion)
     tablas_existentes = set(inspector.get_table_names())
+    antiguas = tablas_existentes & {"accounts", "categories", "reservations", "physical_units"}
+    if antiguas:
+        raise RuntimeError(
+            "Esta base conserva el esquema anterior en inglés. No se crearon tablas paralelas. "
+            "Respalda los datos y utiliza una base vacía "
+            "o recrea expresamente la base de desarrollo."
+        )
     problemas: list[str] = []
 
     for tabla in metadata.sorted_tables:

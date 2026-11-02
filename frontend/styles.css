@@ -226,6 +226,10 @@ a:hover { color: var(--green-dark); }
   background: var(--surface-soft);
   color: var(--green-dark);
 }
+.nav-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 .nav-link.active {
   color: var(--green-deep);
   background: var(--green-soft);

@@ -9,6 +9,8 @@
 | `app/infrastructure/schema.py` | Comprobación de tablas existentes, sin modificarlas. |
 | `app/conexion_python_base_datos.py` | Motor y fábrica de sesiones originales; no se modifica. |
 | `app/infrastructure/models.py` | Definición de las tablas que utiliza actualmente la API. |
+| `app/infrastructure/modelos_sql.py` | Resto de las tablas del diseño SQL en español. |
+| `app/infrastructure/catalogos.py` | Inicialización idempotente de los estados y el tipo de evento. |
 | `app/api/routes.py` | Entradas HTTP y respuestas. |
 | `app/core/security.py` | Autenticación y permisos. |
 | `app/application/basic_use_cases.py` | Reglas de usuarios, inventario y reservas. |
@@ -23,6 +25,7 @@ uvicorn app.main:app --reload
     → obtener_motor() carga el motor del archivo protegido
     → inicializar_base_datos() registra los modelos y valida el esquema
     → create_all() crea únicamente las tablas faltantes
+    → cargar_catalogos() prepara los estados y tipos de evento necesarios
     → la aplicación comienza a atender peticiones
 ```
 
@@ -50,9 +53,10 @@ Los SQL originales y el historial de migraciones se conservan intactos.
   que dos procesos creen simultáneamente las mismas tablas.
 
 Esta comprobación no sustituye una auditoría completa de índices, claves foráneas
-o reglas del negocio. Tampoco adapta por sí misma los modelos actuales al nuevo
-diseño de `base de datos/`, ni convierte UUID a BIGINT. Esas modificaciones del
-dominio son independientes del módulo de conexión.
+o reglas del negocio. Los modelos representan el diseño español corregido de
+`base de datos/`; los ajustes se explican en [esquema en español](12-esquema-espanol.md).
+El arranque no convierte UUID a BIGINT ni renombra tablas antiguas: rechaza el
+esquema anterior para no mezclar versiones.
 
 Si necesitas otra estructura, configura una base nueva y vacía o revisa la
 existente con su respaldo. **No ejecutes `docker compose down -v` para resolver
@@ -86,11 +90,11 @@ Para procesos fuera de HTTP:
 
 ```python
 from app.infrastructure.database import abrir_sesion, inicializar_base_datos
-from app.infrastructure.models import Category
+from app.infrastructure.models import ItemType
 
 inicializar_base_datos()
 with abrir_sesion() as sesion:
-    sesion.add(Category(name="Equipos de laboratorio"))
+    sesion.add(ItemType(name="Equipos de laboratorio"))
 ```
 
 No hace falta llamar a `commit()` o `close()` dentro del bloque. Si una operación

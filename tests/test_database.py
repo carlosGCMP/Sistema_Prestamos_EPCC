@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.api.routes import install_error_handlers
 from app.core.settings import Settings
 from app.infrastructure import database
-from app.infrastructure.models import Category
+from app.infrastructure.models import Category, ItemType
 
 
 def test_importar_aplicacion_no_abre_conexiones() -> None:
@@ -101,14 +101,17 @@ def test_inicializar_crea_tablas_y_conserva_datos() -> None:
     try:
         assert database.inicializar_base_datos(motor) is motor
         with Session(motor) as sesion:
-            sesion.add(Category(name="No borrar"))
+            tipo = ItemType(name="Temporal")
+            sesion.add(tipo)
+            sesion.flush()
+            sesion.add(Category(name="No borrar", item_type_id=tipo.id))
             sesion.commit()
 
         database.inicializar_base_datos(motor)
 
         with Session(motor) as sesion:
             assert sesion.scalar(select(Category.name)) == "No borrar"
-        assert "reservations" in inspect(motor).get_table_names()
+        assert "solicitud_de_reserva" in inspect(motor).get_table_names()
     finally:
         motor.dispose()
 
@@ -116,26 +119,31 @@ def test_inicializar_crea_tablas_y_conserva_datos() -> None:
 @pytest.mark.parametrize(
     ("definicion", "mensaje"),
     [
-        ("id CHAR(32) NOT NULL PRIMARY KEY", "Falta la columna categories.name"),
         (
-            "id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(100) NOT NULL, "
-            "description TEXT, active BOOLEAN NOT NULL",
-            "categories.id: tipo INTEGER",
+            "id_categoria INTEGER NOT NULL PRIMARY KEY",
+            "Falta la columna categoria_del_bien.nombre_categoria",
         ),
         (
-            "id CHAR(32) NOT NULL PRIMARY KEY, name VARCHAR(100), "
-            "description TEXT, active BOOLEAN NOT NULL",
-            "categories.name: la restricción de valores nulos",
+            "id_categoria VARCHAR(30) NOT NULL PRIMARY KEY, "
+            "nombre_categoria VARCHAR(100) NOT NULL, "
+            "id_tipo_bien INTEGER NOT NULL, descripcion TEXT, activo BOOLEAN NOT NULL",
+            "categoria_del_bien.id_categoria: tipo VARCHAR",
         ),
         (
-            "id CHAR(32) NOT NULL, name VARCHAR(100) NOT NULL PRIMARY KEY, "
-            "description TEXT, active BOOLEAN NOT NULL",
-            "categories: la clave primaria",
+            "id_categoria INTEGER NOT NULL PRIMARY KEY, nombre_categoria VARCHAR(100), "
+            "id_tipo_bien INTEGER NOT NULL, descripcion TEXT, activo BOOLEAN NOT NULL",
+            "categoria_del_bien.nombre_categoria: la restricción de valores nulos",
         ),
         (
-            "id CHAR(32) NOT NULL PRIMARY KEY, name VARCHAR(100) NOT NULL, "
-            "description TEXT, active BOOLEAN NOT NULL, obligatoria TEXT NOT NULL",
-            "categories.obligatoria: columna obligatoria no prevista",
+            "id_categoria INTEGER NOT NULL, nombre_categoria VARCHAR(100) NOT NULL PRIMARY KEY, "
+            "id_tipo_bien INTEGER NOT NULL, descripcion TEXT, activo BOOLEAN NOT NULL",
+            "categoria_del_bien: la clave primaria",
+        ),
+        (
+            "id_categoria INTEGER NOT NULL PRIMARY KEY, nombre_categoria VARCHAR(100) NOT NULL, "
+            "id_tipo_bien INTEGER NOT NULL, descripcion TEXT, "
+            "activo BOOLEAN NOT NULL, obligatoria TEXT NOT NULL",
+            "categoria_del_bien.obligatoria: columna obligatoria no prevista",
         ),
     ],
 )
@@ -143,10 +151,10 @@ def test_esquema_incompatible_no_crea_otras_tablas(definicion: str, mensaje: str
     motor = create_engine("sqlite+pysqlite:///:memory:")
     try:
         with motor.begin() as conexion:
-            conexion.execute(text(f"CREATE TABLE categories ({definicion})"))
+            conexion.execute(text(f"CREATE TABLE categoria_del_bien ({definicion})"))
         with pytest.raises(RuntimeError, match=mensaje):
             database.inicializar_base_datos(motor)
-        assert inspect(motor).get_table_names() == ["categories"]
+        assert inspect(motor).get_table_names() == ["categoria_del_bien"]
     finally:
         motor.dispose()
 
@@ -160,7 +168,7 @@ def test_sesion_confirma_y_cierra(
     monkeypatch.setattr(database, "crear_sesion", lambda: sesion)
 
     with database.abrir_sesion() as actual:
-        actual.add(Category(name="Confirmada"))
+        actual.add(Category(name="Confirmada", item_type_id=1))
 
     cerrar.assert_called_once()
     with session_factory() as consulta:
@@ -177,7 +185,7 @@ def test_sesion_revierte_y_cierra_si_falla(
 
     with pytest.raises(ValueError, match="operación interrumpida"):
         with database.abrir_sesion() as actual:
-            actual.add(Category(name="Revertida"))
+            actual.add(Category(name="Revertida", item_type_id=1))
             actual.flush()
             raise ValueError("operación interrumpida")
 
@@ -190,7 +198,7 @@ def test_commit_fallido_no_envia_respuesta_exitosa(
     session_factory: sessionmaker[Session], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     with session_factory.begin() as sesion:
-        sesion.add(Category(name="Duplicada"))
+        sesion.add(Category(name="Duplicada", item_type_id=1))
     monkeypatch.setattr(database, "crear_sesion", session_factory)
     aplicacion = FastAPI()
     install_error_handlers(aplicacion)
@@ -200,7 +208,7 @@ def test_commit_fallido_no_envia_respuesta_exitosa(
         sesion: Annotated[Session, Depends(database.obtener_sesion, scope="function")],
     ) -> dict[str, bool]:
         # Sin flush: el error debe detectarse al confirmar, antes de enviar el 201.
-        sesion.add(Category(name="Duplicada"))
+        sesion.add(Category(name="Duplicada", item_type_id=1))
         return {"creada": True}
 
     with TestClient(aplicacion) as cliente:

@@ -8,7 +8,7 @@ La rama `implementacion-basica` fija un alcance inicial y acotado; `feat/fronten
 
 El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. Incluye una interfaz web básica en HTML, CSS y JavaScript que consume la API. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
 
-El arranque valida las tablas existentes y crea las faltantes desde los modelos actuales, sin ejecutar migraciones ni borrar datos. Los SQL originales y las migraciones históricas se conservan intactos, pero no forman parte del arranque. La adaptación del nuevo diseño SQL al dominio todavía no está implementada.
+El esquema físico utiliza las 43 tablas de los SQL originales, más `bien` y `prestamo`, con nombres y columnas en español e identificadores BIGINT. El arranque valida las tablas existentes, crea las faltantes y carga catálogos sin ejecutar migraciones ni borrar datos. Los SQL originales y las migraciones históricas se conservan intactos, pero no se ejecutan. Consulta las decisiones y relaciones en [esquema en español](docs/12-esquema-espanol.md).
 
 ## Tecnologías
 
@@ -32,6 +32,8 @@ uvicorn app.main:app --reload
 ```
 
 No sobrescribas `.env` si ya tiene tu configuración. PostgreSQL se espera hasta 30 segundos (configurable con `DATABASE_WAIT_SECONDS`). Si una tabla existente es incompatible, el arranque se detiene con una explicación; no modifica ni convierte sus datos.
+
+El esquema anterior con UUID y tablas en inglés no se transforma automáticamente ni se mezcla con el nuevo. Su recreación requiere autorización y respaldo. La presencia de las 45 tablas no habilita por sí sola las rutas de los módulos avanzados.
 
 En Windows 11 con Docker Desktop y contenedores Linux, usa PowerShell:
 
@@ -89,7 +91,7 @@ ruff format --check app
 mypy app
 ```
 
-Las pruebas de conexión y salud se ejecutan sin PostgreSQL y verifican el arranque, la creación de tablas, el rechazo de esquemas incompatibles y las transacciones. La suite completa conserva dos fallos anteriores en `tests/test_auth_and_api.py` y `tests/test_lending_workflow.py`, porque esperan rutas de préstamos y políticas que la API básica no expone. La alineación de esos escenarios está pendiente en el issue [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15).
+La suite se ejecuta con `pytest`, sin acceder a PostgreSQL local. Comprueba las 45 tablas y sus claves foráneas, los identificadores BIGINT, el arranque y las transacciones, los permisos, la jerarquía tipo/categoría y el flujo de solicitar, confirmar y cancelar reservas. Los escenarios HTTP están alineados con el alcance operativo actual, no con rutas históricas sin implementar.
 
 ## Documentación
 

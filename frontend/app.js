@@ -37,7 +37,7 @@ let currentPerson = null;
 let refreshToastTimer = null;
 
 function isAdmin() {
-  return currentPerson?.role === "ADMIN_INVENTARIO";
+  return currentPerson?.is_admin === true;
 }
 
 function showToast(message, isError = false) {
@@ -169,9 +169,10 @@ async function loadInventory() {
   ]);
   inventoryCache = { categories, types, items, units };
   renderUnits(units, items, types);
-  fillSelect(document.querySelector('#type-form [name="category_id"]'), categories, (item) => item.name, "Selecciona categoría");
-  fillSelect(document.querySelector('#item-form [name="item_type_id"]'), types, (item) => item.name, "Selecciona tipo");
-  fillSelect(document.querySelector('#unit-form [name="item_card_id"]'), items, (item) => item.name, "Selecciona ficha");
+  fillSelect(document.querySelector('#category-form [name="item_type_id"]'), types, (item) => item.name, "Selecciona tipo");
+  fillSelect(document.querySelector('#item-form [name="category_id"]'), categories, (item) => item.name, "Selecciona categoría");
+  const freeCards = items.filter((item) => !units.some((unit) => unit.item_card_id === item.id));
+  fillSelect(document.querySelector('#unit-form [name="item_card_id"]'), freeCards, (item) => item.name, "Selecciona ficha sin unidad");
   const availableUnits = units.filter((unit) => unit.state === "DISPONIBLE");
   fillSelect(document.querySelector('#reservation-form [name="unit_id"]'), availableUnits, (unit) => `${unit.inventory_code} · ${itemName(unit.item_card_id, items)}`, "Selecciona unidad");
 }
@@ -193,6 +194,10 @@ function renderUnits(units, items, types) {
     makeCell(row, unit.location);
     makeCell(row, unit.condition);
     addBadge(makeCell(row, ""), unit.state);
+    if (isAdmin()) {
+      makeCell(row, unit.serial_number);
+      makeCell(row, unit.acquisition_date);
+    }
     body.append(row);
   }
   document.querySelector("#units-empty").hidden = units.length > 0;
@@ -211,11 +216,13 @@ async function loadReservations() {
   for (const reservation of reservations) {
     const row = document.createElement("tr");
     const unit = inventoryCache.units.find((entry) => entry.id === reservation.unit_id);
-    makeCell(row, unit?.inventory_code || reservation.unit_id.slice(0, 8));
+    makeCell(row, unit?.inventory_code || reservation.unit_id);
+    if (isAdmin()) makeCell(row, reservation.applicant_id);
     makeCell(row, dateLabel(reservation.starts_at));
     makeCell(row, dateLabel(reservation.ends_at));
     makeCell(row, reservation.intended_use);
     addBadge(makeCell(row, ""), reservation.state);
+    if (isAdmin()) makeCell(row, reservation.decision_reason);
     const actions = document.createElement("td");
     if (isAdmin() && reservation.state === "PENDIENTE") {
       const accept = document.createElement("button");
@@ -254,6 +261,8 @@ async function loadPeople() {
     makeCell(row, person.full_name);
     makeCell(row, person.institutional_email);
     makeCell(row, roleNames[person.role] || person.role);
+    makeCell(row, person.cui || person.id);
+    makeCell(row, person.is_admin ? "Sí" : "No");
     addBadge(makeCell(row, ""), person.state);
     const actions = document.createElement("td");
     if (person.state === "ACTIVA" && person.id !== currentPerson.id) {
@@ -354,24 +363,37 @@ document.querySelectorAll(".refresh-button").forEach((button) => {
 document.querySelector("#category-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  submitJsonForm(form, "/inventory/categories", (data) => ({ name: requiredText(data, "name"), description: requiredText(data, "description") || null }), "Categoría creada.", loadInventory);
+  submitJsonForm(form, "/inventory/categories", (data) => ({ item_type_id: data.get("item_type_id"), name: requiredText(data, "name"), description: requiredText(data, "description") || null }), "Categoría creada.", loadInventory);
 });
 document.querySelector("#type-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  submitJsonForm(form, "/inventory/types", (data) => ({ name: requiredText(data, "name"), category_id: data.get("category_id"), lendable: data.get("lendable") === "on" }), "Tipo de bien creado.", loadInventory);
+  submitJsonForm(form, "/inventory/types", (data) => ({ name: requiredText(data, "name"), lendable: data.get("lendable") === "on" }), "Tipo de bien creado.", loadInventory);
 });
 document.querySelector("#item-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  submitJsonForm(form, "/inventory/items", (data) => ({ item_type_id: data.get("item_type_id"), name: requiredText(data, "name"), description: requiredText(data, "description") || null, attributes: {} }), "Ficha creada.", loadInventory);
+  submitJsonForm(form, "/inventory/items", (data) => {
+    const attributes = {};
+    for (const line of requiredText(data, "caracteristicas").split("\n").filter((value) => value.trim())) {
+      const separator = line.indexOf(":");
+      const name = line.slice(0, separator).trim();
+      const value = line.slice(separator + 1).trim();
+      if (separator < 1 || !value || Object.hasOwn(attributes, name)) {
+        throw new Error("Cada característica debe tener nombre y valor separados por dos puntos, sin nombres repetidos.");
+      }
+      Object.defineProperty(attributes, name, { value, enumerable: true });
+    }
+    return { category_id: data.get("category_id"), name: requiredText(data, "name"), description: requiredText(data, "description") || null, attributes };
+  }, "Ficha creada.", loadInventory);
 });
 document.querySelector("#unit-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;
   submitJsonForm(form, "/inventory/units", (data) => ({
     item_card_id: data.get("item_card_id"), inventory_code: requiredText(data, "inventory_code"),
-    serial_number: requiredText(data, "serial_number") || null, location: requiredText(data, "location"),
+    serial_number: requiredText(data, "serial_number"), location: requiredText(data, "location"),
+    acquisition_date: data.get("acquisition_date") || null,
     custody: requiredText(data, "custody"), condition: requiredText(data, "condition"),
     accessories: requiredText(data, "accessories").split(",").map((part) => part.trim()).filter(Boolean),
   }), "Unidad registrada.", loadInventory);
@@ -380,6 +402,9 @@ document.querySelector("#unit-form").addEventListener("submit", (event) => {
 document.querySelector('#person-form [name="role"]').addEventListener("change", (event) => {
   document.querySelectorAll(".student-field").forEach((field) => { field.hidden = event.target.value !== "ESTUDIANTE"; });
   document.querySelectorAll(".teacher-field").forEach((field) => { field.hidden = event.target.value !== "DOCENTE"; });
+  document.querySelectorAll(".staff-field").forEach((field) => { field.hidden = event.target.value !== "PERSONAL_ADMINISTRATIVO"; });
+  document.querySelectorAll(".admin-attribution-field").forEach((field) => { field.hidden = event.target.value === "ESTUDIANTE"; });
+  if (event.target.value === "ESTUDIANTE") document.querySelector('[name="is_admin"]').checked = false;
 });
 document.querySelector('#person-form [name="role"]').dispatchEvent(new Event("change"));
 document.querySelector("#person-form").addEventListener("submit", (event) => {
@@ -388,8 +413,11 @@ document.querySelector("#person-form").addEventListener("submit", (event) => {
   const selectedRole = form.elements.role.value;
   submitJsonForm(form, "/people", (data) => {
     const person = values(data);
-    person.cui = person.cui.trim();
-    person.full_name = person.full_name.trim();
+    person.cui = person.cui.trim() || null;
+    person.first_names = person.first_names.trim();
+    person.last_names = person.last_names.trim();
+    person.end_date = person.end_date || null;
+    person.is_admin = selectedRole !== "ESTUDIANTE" && data.get("is_admin") === "on";
     person.start_date = person.start_date || new Date().toISOString().slice(0, 10);
     person.semester = person.semester ? Number(person.semester) : null;
     for (const field of ["student_code", "program", "teacher_code", "specialty"]) person[field] ||= null;
