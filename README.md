@@ -54,6 +54,23 @@ Las tablas se crean automáticamente, pero no se inventan credenciales. Si todav
 python -m app.bootstrap_admin
 ```
 
+Introduce documento, nombres, apellidos, correo y usuario; no hay valores predeterminados.
+Los campos vacíos o inválidos se vuelven a pedir. La contraseña debe tener entre 12 y
+128 caracteres y no se muestra al escribirla. Usa `Ctrl+C` para cancelar sin crear cuentas.
+Espera el mensaje de creación exitosa antes de iniciar sesión en la plataforma.
+
+Si el comando falla **antes de pedir los datos**, revisa el aviso de configuración:
+indicará la variable que falta o es inválida, sin mostrar su valor. `.env` se carga
+desde el directorio actual, así que ejecuta el comando desde la raíz del proyecto.
+Para asegurar el intérprete correcto en Linux puedes usar directamente:
+
+```bash
+./.venv/bin/python -m app.bootstrap_admin
+```
+
+En Windows, el equivalente es `.\.venv\Scripts\python.exe -m app.bootstrap_admin`.
+No sobrescribas tu `.env` existente ni compartas sus contraseñas para diagnosticarlo.
+
 La interfaz web está en `http://127.0.0.1:8000/`. No requiere Node.js ni un proceso de frontend separado.
 
 Para detener la API, usa `Ctrl+C`. Para detener PostgreSQL conservando los datos, ejecuta `docker compose down` (no agregues `-v` salvo que quieras eliminar el volumen local).

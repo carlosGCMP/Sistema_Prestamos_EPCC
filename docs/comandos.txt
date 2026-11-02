@@ -1,0 +1,7 @@
+Comandos para ejecutar la plataforma
+
+cd /home/javier/Documentos/clone/Sistema_Prestamos_EPCC
+./.venv/bin/python -m app.bootstrap_admin
+
+python -m app.bootstrap_admin  // Creacion de Usuario de admin local
+uvicorn app.main:app --reload  //ejecutar el servidor
