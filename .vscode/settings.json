@@ -14,5 +14,18 @@
     ".pytest_cache": true,
     ".ruff_cache": true,
     ".venv": true
-  }
+  },
+  "python.terminal.useEnvFile": true,
+  "sqltools.connections": [
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5433,
+      "driver": "PostgreSQL",
+      "name": "Sistema_prestamos",
+      "database": "epcc_prestamos",
+      "username": "epcc"
+    }
+  ]
 }

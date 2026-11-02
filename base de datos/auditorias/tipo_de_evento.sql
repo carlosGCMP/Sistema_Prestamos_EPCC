@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS tipo_de_evento (
+    id_tipo_evento BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_tipo_evento VARCHAR(100) NOT NULL UNIQUE
+);
