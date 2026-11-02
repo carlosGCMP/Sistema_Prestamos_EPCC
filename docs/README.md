@@ -9,6 +9,7 @@
 - [Plan de implementación](04-plan-de-implementacion.md)
 - [Restablecimiento al alcance básico](09-alcance-basico-y-plan.md)
 - [Tablero e issues](10-tablero-kanban-local.md)
+- [Entrega ZIP por Classroom y ejecución](11-entrega-classroom.md)
 
 ## Referencias históricas
 

@@ -1,48 +1,25 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from pydantic_settings import BaseSettings, SettingsConfigDict
+"""Nombres compatibles con la rama de conexiones, sin duplicar la persistencia.
 
+La API, Alembic y este módulo comparten motor, sesiones y metadatos.
+Importarlo no abre conexiones ni imprime credenciales.
+"""
 
-# Configuración de conexión con la base de datos
-class ConfiguracionBaseDatos(BaseSettings):
-    DATABASE_URL: str
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore"
-    )
-
-
-configuracion = ConfiguracionBaseDatos()
-print("Puerto configurado:", configuracion.DATABASE_URL.split("@")[-1])
-
-# Motor encargado de administrar las conexiones
-motor_base_datos = create_engine(
-    configuracion.DATABASE_URL,
-    pool_pre_ping=True
+from app.infrastructure.database import (
+    Base as BaseDatos,
+)
+from app.infrastructure.database import (
+    SessionLocal as SesionBaseDatos,
+)
+from app.infrastructure.database import (
+    engine as motor_base_datos,
+)
+from app.infrastructure.database import (
+    get_session as obtener_conexion,
 )
 
-
-# Fábrica de sesiones para realizar operaciones en la BD
-SesionBaseDatos = sessionmaker(
-    bind=motor_base_datos,
-    autoflush=False,
-    autocommit=False
-)
+__all__ = ["BaseDatos", "SesionBaseDatos", "motor_base_datos", "obtener_conexion"]
 
 
-# Clase base para los modelos de las tablas
-class BaseDatos(DeclarativeBase):
-    pass
-
-
-# Proporciona una sesión y la cierra al finalizar
-def obtener_conexion():
-    sesion = SesionBaseDatos()
-    try:
-        yield sesion
-    finally:
-        sesion.close()
-with motor_base_datos.connect() as conexion:
-    resultado = conexion.exec_driver_sql("SELECT version()")
-    print(resultado.scalar())
+if __name__ == "__main__":
+    with motor_base_datos.connect() as conexion:
+        print(conexion.exec_driver_sql("SELECT version()").scalar())

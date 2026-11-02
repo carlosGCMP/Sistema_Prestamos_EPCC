@@ -9,7 +9,9 @@ from app.infrastructure.models import Account, Person, Role
 def test_health_and_openapi(client) -> None:  # type: ignore[no-untyped-def]
     assert client.get("/health").json() == {"status": "ok"}
     schema = client.get("/openapi.json").json()
-    assert "/loans/{loan_id}/return" in schema["paths"]
+    assert "/loans/{loan_id}/return" not in schema["paths"]
+    assert "/policies" not in schema["paths"]
+    assert "/people" in schema["paths"]
     assert "/reservations/{reservation_id}/decision" in schema["paths"]
 
 

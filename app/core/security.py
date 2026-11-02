@@ -43,7 +43,7 @@ def create_access_token(account: Account) -> str:
 
 def get_current_account(
     token: Annotated[str, Depends(oauth2_scheme)],
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[Session, Depends(get_session, scope="function")],
 ) -> Account:
     unauthorized = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

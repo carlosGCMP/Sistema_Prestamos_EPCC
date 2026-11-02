@@ -43,10 +43,10 @@
       <nav class="main-nav">
         <button class="nav-link active" data-view="inventory-view" type="button">Inventario</button>
         <button class="nav-link" data-view="reservations-view" type="button">Reservas</button>
-        <button class="nav-link" data-view="loans-view" type="button">Préstamos</button>
+        <button class="nav-link" data-view="loans-view" type="button" disabled title="Pendiente de backend">Préstamos (pendiente)</button>
         <button class="nav-link admin-only" data-view="people-view" type="button" hidden>Usuarios</button>
-        <button class="nav-link admin-only" data-view="academic-view" type="button" hidden>Vinculación Académica</button>
-        <button class="nav-link admin-only" data-view="policies-view" type="button" hidden>Políticas</button>
+        <button class="nav-link admin-only" data-view="academic-view" type="button" hidden disabled title="Pendiente de backend">Vinculación Académica (pendiente)</button>
+        <button class="nav-link admin-only" data-view="policies-view" type="button" hidden disabled title="Pendiente de backend">Políticas (pendiente)</button>
       </nav>
       <div class="sidebar-note"><span class="status-dot"></span><span>API conectada</span></div>
     </aside>
@@ -59,7 +59,7 @@
           <div><p class="eyebrow">CATÁLOGO E INVENTARIO</p><h1>Bienes disponibles</h1></div>
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
-        <p class="muted">Consulta las unidades físicas registradas y su estado actual.</p>
+        <p class="muted">Consulta las unidades físicas registradas y su estado actual. Préstamos, políticas y vinculación académica todavía no están habilitados.</p>
 
         <section class="panel">
           <div class="panel-heading"><div><h2>Unidades</h2><p>Ejemplares identificados por código de inventario.</p></div></div>
@@ -67,9 +67,6 @@
             <table>
               <thead><tr>
                 <th>Código</th><th>Bien</th><th>Ubicación</th><th>Condición</th><th>Estado</th>
-                <th class="admin-only">Serie</th>
-                <th class="admin-only">Adquisición</th>
-                <th class="admin-only">Acciones</th>
               </tr></thead>
               <tbody id="units-table"></tbody>
             </table>
@@ -111,7 +108,7 @@
               <label>Ubicación<input name="location" required maxlength="100"></label>
               <label>Responsable de custodia<input name="custody" required maxlength="150"></label>
               <label>Condición<input name="condition" required maxlength="100" placeholder="Bueno"></label>
-              <label>Fecha de adquisición<input name="adquisition_date" type="date"></label>
+              <label>Fecha de adquisición (pendiente)<input name="adquisition_date" type="date" disabled></label>
               <label>Accesorios (separados por coma)<input name="accessories" placeholder="Cargador, estuche"></label>
               <button class="button secondary" type="submit">Registrar unidad</button>
             </form>
@@ -148,9 +145,6 @@
                 <th>Desde</th><th>Hasta</th>
                 <th>Uso previsto</th><th>Estado</th>
                 <th class="admin-only">Motivo</th>
-                <th class="admin-only">Solicitada</th>
-                <th class="admin-only">Política</th>
-                <th class="admin-only">Préstamo</th>
                 <th>Acciones</th>
               </tr></thead>
               <tbody id="reservations-table"></tbody>
@@ -214,28 +208,28 @@
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
         <section class="panel">
-          <div class="panel-heading"><div><h2>Registrar persona</h2><p>La atribución administrativa solo puede otorgarse a Docente o Personal administrativo.</p></div></div>
+          <div class="panel-heading"><div><h2>Registrar persona</h2><p>Completa los datos del usuario y el perfil correspondiente a su rol.</p></div></div>
           <form id="person-form" class="forms-grid user-form">
             <label>Tipo de documento<select name="document_type" required><option>DNI</option><option>CE</option><option>PASAPORTE</option></select></label>
             <label>Número de documento<input name="document_number" required maxlength="30"></label>
             <label>Nombre completo<input name="full_name" required maxlength="200"></label>
             <label>Correo institucional<input name="institutional_email" type="email" required maxlength="150"></label>
-            <label>Rol base<select name="role" required><option value="ESTUDIANTE">Estudiante</option><option value="DOCENTE">Docente</option><option value="PERSONAL_ADMINISTRATIVO">Personal administrativo</option></select></label>
+            <label>Rol<select name="role" required><option value="ESTUDIANTE">Estudiante</option><option value="DOCENTE">Docente</option><option value="PERSONAL_ADMINISTRATIVO">Personal administrativo</option><option value="ADMIN_INVENTARIO">Administrador de inventario</option></select></label>
             <label>Afiliación<input name="school_affiliation" required value="EPCC" maxlength="100"></label>
             <label>Fecha de inicio<input name="start_date" type="date" required></label>
-            <label>Fecha de fin (opcional)<input name="end_date" type="date"></label>
+            <label>Fecha de fin (pendiente)<input name="end_date" type="date" disabled></label>
             <label>Usuario<input name="username" required minlength="3" maxlength="50" autocomplete="off"></label>
             <label>Contraseña temporal<input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
 
-            <label class="student-field">CUI (Código Único UNSA)<input name="cui" maxlength="20"></label>
+            <label>CUI / identificador institucional<input name="cui" required minlength="4" maxlength="20"></label>
             <label class="student-field">Código universitario<input name="student_code" maxlength="30"></label>
             <label class="student-field">Programa<input name="program" maxlength="120"></label>
             <label class="student-field">Semestre<input name="semester" type="number" min="1" max="20"></label>
 
             <label class="teacher-field">Código docente<input name="teacher_code" maxlength="30"></label>
             <label class="teacher-field">Especialidad<input name="specialty" maxlength="120"></label>
-            <label class="teacher-field">Categoría docente<select name="categoria_docente"><option value="">—</option><option>PRINCIPAL</option><option>ASOCIADO</option><option>AUXILIAR</option><option>JEFE_PRACTICA</option></select></label>
-            <label class="teacher-field">Vinculación contractual<select name="vinculacion_contractual"><option value="">—</option><option>NOMBRADO</option><option>CONTRATADO</option><option>INVITADO</option></select></label>
+            <label class="teacher-field">Categoría docente (pendiente)<select name="categoria_docente" disabled><option value="">—</option><option>PRINCIPAL</option><option>ASOCIADO</option><option>AUXILIAR</option><option>JEFE_PRACTICA</option></select></label>
+            <label class="teacher-field">Vinculación contractual (pendiente)<select name="vinculacion_contractual" disabled><option value="">—</option><option>NOMBRADO</option><option>CONTRATADO</option><option>INVITADO</option></select></label>
 
             <label class="staff-field" hidden>Dependencia / oficina<input name="office" maxlength="120"></label>
             <label class="staff-field" hidden>Cargo<input name="position" maxlength="120"></label>
@@ -251,9 +245,8 @@
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>Nombre</th><th>Correo</th><th>Rol base</th>
-                <th>Identificador</th><th>Admin</th><th>Estado</th>
-                <th class="admin-only">Último acceso</th>
+                <th>Nombre</th><th>Correo</th><th>Rol</th>
+                <th>Identificador</th><th>Estado</th>
                 <th>Acciones</th>
               </tr></thead>
               <tbody id="people-table"></tbody>

@@ -124,6 +124,7 @@ function showDashboard(person) {
     element.hidden = !requester;
   });
   document.querySelector("#reservations-heading").textContent = isAdmin() ? "Todas las reservas" : "Mis reservas";
+  activateView("inventory-view", false);
   loadDashboard().catch((error) => showToast(error.message, true));
 }
 
@@ -134,6 +135,10 @@ function showLogin(error = "") {
   const message = document.querySelector("#login-error");
   message.textContent = error;
   message.hidden = !error;
+  inventoryCache = { categories: [], types: [], items: [], units: [] };
+  for (const selector of ["#units-table", "#reservations-table", "#people-table"]) {
+    document.querySelector(selector).replaceChildren();
+  }
 }
 
 async function logout(sendRequest = true) {
@@ -144,11 +149,12 @@ async function logout(sendRequest = true) {
   showLogin();
 }
 
-function activateView(viewId) {
+function activateView(viewId, refresh = true) {
   document.querySelectorAll(".page-view").forEach((view) => { view.hidden = view.id !== viewId; });
   document.querySelectorAll(".nav-link").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === viewId);
   });
+  if (!refresh) return;
   if (viewId === "people-view") loadPeople().catch((error) => showToast(error.message, true));
   if (viewId === "reservations-view") loadReservations().catch((error) => showToast(error.message, true));
   if (viewId === "inventory-view") loadInventory().catch((error) => showToast(error.message, true));
@@ -212,10 +218,12 @@ async function loadReservations() {
     const row = document.createElement("tr");
     const unit = inventoryCache.units.find((entry) => entry.id === reservation.unit_id);
     makeCell(row, unit?.inventory_code || reservation.unit_id.slice(0, 8));
+    if (isAdmin()) makeCell(row, reservation.applicant_id);
     makeCell(row, dateLabel(reservation.starts_at));
     makeCell(row, dateLabel(reservation.ends_at));
     makeCell(row, reservation.intended_use);
     addBadge(makeCell(row, ""), reservation.state);
+    if (isAdmin()) makeCell(row, reservation.decision_reason);
     const actions = document.createElement("td");
     if (isAdmin() && reservation.state === "PENDIENTE") {
       const accept = document.createElement("button");
@@ -254,6 +262,7 @@ async function loadPeople() {
     makeCell(row, person.full_name);
     makeCell(row, person.institutional_email);
     makeCell(row, roleNames[person.role] || person.role);
+    makeCell(row, person.cui);
     addBadge(makeCell(row, ""), person.state);
     const actions = document.createElement("td");
     if (person.state === "ACTIVA" && person.id !== currentPerson.id) {
@@ -364,7 +373,14 @@ document.querySelector("#type-form").addEventListener("submit", (event) => {
 document.querySelector("#item-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  submitJsonForm(form, "/inventory/items", (data) => ({ item_type_id: data.get("item_type_id"), name: requiredText(data, "name"), description: requiredText(data, "description") || null, attributes: {} }), "Ficha creada.", loadInventory);
+  submitJsonForm(form, "/inventory/items", (data) => {
+    const attributes = Object.fromEntries(requiredText(data, "caracteristicas").split("\n").filter((line) => line.trim()).map((line) => {
+      const separator = line.indexOf(":");
+      if (separator < 1 || !line.slice(separator + 1).trim()) throw new Error("Escribe cada característica como nombre: valor.");
+      return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
+    }));
+    return { item_type_id: data.get("item_type_id"), name: requiredText(data, "name"), description: requiredText(data, "description") || null, attributes };
+  }, "Ficha creada.", loadInventory);
 });
 document.querySelector("#unit-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -377,10 +393,17 @@ document.querySelector("#unit-form").addEventListener("submit", (event) => {
   }), "Unidad registrada.", loadInventory);
 });
 
-document.querySelector('#person-form [name="role"]').addEventListener("change", (event) => {
-  document.querySelectorAll(".student-field").forEach((field) => { field.hidden = event.target.value !== "ESTUDIANTE"; });
-  document.querySelectorAll(".teacher-field").forEach((field) => { field.hidden = event.target.value !== "DOCENTE"; });
-});
+function updatePersonFields() {
+  const role = document.querySelector('#person-form [name="role"]').value;
+  for (const [selector, expectedRole] of [[".student-field", "ESTUDIANTE"], [".teacher-field", "DOCENTE"]]) {
+    document.querySelectorAll(selector).forEach((field) => {
+      field.hidden = role !== expectedRole;
+      const input = field.querySelector("input, select");
+      if (!input.disabled) input.required = role === expectedRole;
+    });
+  }
+}
+document.querySelector('#person-form [name="role"]').addEventListener("change", updatePersonFields);
 document.querySelector('#person-form [name="role"]').dispatchEvent(new Event("change"));
 document.querySelector("#person-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -396,7 +419,7 @@ document.querySelector("#person-form").addEventListener("submit", (event) => {
     if (selectedRole !== "ESTUDIANTE") { person.student_code = null; person.program = null; person.semester = null; }
     if (selectedRole !== "DOCENTE") { person.teacher_code = null; person.specialty = null; }
     return person;
-  }, "Usuario creado.", loadPeople);
+  }, "Usuario creado.", async () => { updatePersonFields(); await loadPeople(); });
 });
 document.querySelector("#reservation-form").addEventListener("submit", (event) => {
   event.preventDefault();
