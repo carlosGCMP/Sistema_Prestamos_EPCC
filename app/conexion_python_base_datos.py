@@ -1,4 +1,3 @@
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,7 +14,7 @@ class ConfiguracionBaseDatos(BaseSettings):
 
 
 configuracion = ConfiguracionBaseDatos()
-
+print("Puerto configurado:", configuracion.DATABASE_URL.split("@")[-1])
 
 # Motor encargado de administrar las conexiones
 motor_base_datos = create_engine(
@@ -44,3 +43,6 @@ def obtener_conexion():
         yield sesion
     finally:
         sesion.close()
+with motor_base_datos.connect() as conexion:
+    resultado = conexion.exec_driver_sql("SELECT version()")
+    print(resultado.scalar())
