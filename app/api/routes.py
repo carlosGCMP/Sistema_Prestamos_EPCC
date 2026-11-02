@@ -63,7 +63,8 @@ from app.infrastructure.models import (
 )
 
 router = APIRouter()
-SessionDep = Annotated[Session, Depends(get_session)]
+# Confirmar la transacción antes de enviar la respuesta y de que la web recargue datos.
+SessionDep = Annotated[Session, Depends(get_session, scope="function")]
 
 
 @router.post("/auth/token", response_model=TokenResponse, tags=["usuarios"])

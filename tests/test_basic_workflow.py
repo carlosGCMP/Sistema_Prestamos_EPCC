@@ -6,7 +6,7 @@ from app.core.security import hash_password
 from app.infrastructure.models import Account, Person, Role
 
 
-def test_policy_reservation_loan_renewal_and_return(
+def test_inventory_reservation_conflicts_and_cancellation(
     client, session_factory: sessionmaker[Session]
 ) -> None:  # type: ignore[no-untyped-def]
     with session_factory.begin() as session:
@@ -90,23 +90,6 @@ def test_policy_reservation_loan_renewal_and_return(
     )
     assert unit.status_code == 201
 
-    policy = client.post(
-        "/policies",
-        headers=admin_headers,
-        json={
-            "name": "Préstamo estándar",
-            "role": "ESTUDIANTE",
-            "max_units": 1,
-            "max_duration": 1,
-            "duration_unit": "DIAS",
-            "allowed_modes": ["RETIRO"],
-            "allows_renewal": True,
-            "max_renewals": 1,
-            "valid_from": (datetime.now(UTC) - timedelta(days=1)).isoformat(),
-        },
-    )
-    assert policy.status_code == 201
-
     student_token = client.post(
         "/auth/token", data={"username": "student", "password": "clave-estudiantil-segura-2026"}
     ).json()["access_token"]
@@ -130,37 +113,63 @@ def test_policy_reservation_loan_renewal_and_return(
         json={"confirm": True},
     )
     assert decision.status_code == 200, decision.json()
+    assert decision.json()["state"] == "CONFIRMADA"
+
+    def reserve(starts_at: datetime, ends_at: datetime) -> str:
+        response = client.post(
+            "/reservations",
+            headers=student_headers,
+            json={
+                "unit_id": unit.json()["id"],
+                "starts_at": starts_at.isoformat(),
+                "ends_at": ends_at.isoformat(),
+                "intended_use": "Otra sesión de trabajo",
+            },
+        )
+        assert response.status_code == 201, response.json()
+        return str(response.json()["id"])
+
+    overlap = reserve(reserved_from + timedelta(minutes=30), reserved_until)
+    assert (
+        client.post(
+            f"/reservations/{overlap}/decision", headers=admin_headers, json={"confirm": True}
+        ).status_code
+        == 409
+    )
+    adjacent = reserve(reserved_until, reserved_until + timedelta(hours=1))
+    assert (
+        client.post(
+            f"/reservations/{adjacent}/decision", headers=admin_headers, json={"confirm": True}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            f"/reservations/{overlap}/decision", headers=student_headers, json={"confirm": True}
+        ).status_code
+        == 403
+    )
+    rejected = client.post(
+        f"/reservations/{overlap}/decision",
+        headers=admin_headers,
+        json={"confirm": False, "reason": "Se cruza con otra reserva"},
+    )
+    assert rejected.status_code == 200
+    assert rejected.json()["state"] == "RECHAZADA"
     cancelled = client.post(
         f"/reservations/{reservation.json()['id']}/cancel", headers=student_headers
     )
     assert cancelled.status_code == 200
-
-    due = datetime.now(UTC) + timedelta(hours=2)
-    loan = client.post(
-        "/loans",
-        headers=admin_headers,
-        json={
-            "applicant_id": student.json()["id"],
-            "unit_id": unit.json()["id"],
-            "due_at": due.isoformat(),
-            "use_mode": "RETIRO",
-            "delivered_condition": "Operativa",
-            "delivered_accessories": ["cargador"],
-        },
+    assert cancelled.json()["state"] == "CANCELADA"
+    assert (
+        client.post(
+            f"/reservations/{reservation.json()['id']}/cancel", headers=student_headers
+        ).status_code
+        == 409
     )
-    assert loan.status_code == 201
-    renewed_due = due + timedelta(hours=4)
-    renewal = client.post(
-        f"/loans/{loan.json()['id']}/renewals",
-        headers=admin_headers,
-        json={"new_due_at": renewed_due.isoformat()},
+    assert len(client.get("/reservations", headers=student_headers).json()) == 3
+    assert (
+        client.post(f"/people/{student.json()['id']}/deactivate", headers=admin_headers).status_code
+        == 200
     )
-    assert renewal.status_code == 201
-    returned = client.post(
-        f"/loans/{loan.json()['id']}/return",
-        headers=admin_headers,
-        json={"condition": "Operativa", "accessories": ["cargador"], "disposition": "DISPONIBLE"},
-    )
-    assert returned.status_code == 200
-    assert returned.json()["state"] == "DEVUELTO"
-    assert client.get("/audit", headers=admin_headers).status_code == 200
+    assert client.get("/me", headers=student_headers).status_code == 401

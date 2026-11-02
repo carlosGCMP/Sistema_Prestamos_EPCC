@@ -4,10 +4,12 @@
 
 - [Visión y alcance básico](01-vision-y-alcance.md)
 - [Arquitectura y tecnologías](02-arquitectura-y-tecnologias.md)
+- Frontend inicial: `../frontend/` (HTML, CSS y JavaScript nativo)
 - [Modelo de dominio básico](03-dominio-y-modulos.md)
 - [Plan de implementación](04-plan-de-implementacion.md)
 - [Restablecimiento al alcance básico](09-alcance-basico-y-plan.md)
 - [Tablero e issues](10-tablero-kanban-local.md)
+- [Entrega ZIP por Classroom y ejecución](11-entrega-classroom.md)
 
 ## Referencias históricas
 

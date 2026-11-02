@@ -17,11 +17,11 @@ La lista exacta y vigente de rutas se obtiene de `/openapi.json` o `/docs` al ej
 
 ## Qué no está activo
 
-La API no expone políticas configurables, préstamos, renovaciones/devoluciones, condición académica, garantías, incidencias, sanciones, apelaciones ni resumen de operaciones. Tampoco se integra con sistemas externos ni incluye interfaz web.
+La API no expone políticas configurables, préstamos, renovaciones/devoluciones, condición académica, garantías, incidencias, sanciones ni apelaciones. Tampoco se integra con sistemas externos. Se añadió una interfaz web mínima que consume los endpoints básicos del backend.
 
 ## Persistencia y compatibilidad
 
-Se preservaron `migrations/versions/0001`–`0003` y las tablas existentes. No se reescribió una migración aplicada ni se eliminaron datos/tablas localmente. La consecuencia es que el esquema PostgreSQL heredado contiene tablas que el router básico no usa. La limpieza futura exige inventariar el esquema y preparar una migración segura con respaldo, tal como se sigue en el issue [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16).
+Se preservaron las migraciones versionadas `0001` y `0002` y las tablas existentes. No se reescribió una migración aplicada ni se eliminaron datos/tablas localmente. La consecuencia es que el esquema PostgreSQL heredado contiene tablas que el router básico no usa. La limpieza futura exige inventariar el esquema y preparar una migración segura con respaldo, tal como se sigue en el issue [#16](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/16).
 
 ## Organización de la implementación
 
@@ -34,4 +34,4 @@ Se preservaron `migrations/versions/0001`–`0003` y las tablas existentes. No s
 
 ## Estado y límites
 
-El código de este alcance se publica en la rama `implementacion-basica`. El PR anterior del incremento del 25 % se mantiene intacto y no se mezcla con este corte. Los issues y el tablero GitHub organizan el backlog básico. El material anterior permanece en Git como historial; no debe confundirse con la funcionalidad actualmente expuesta.
+La API básica se publica en `implementacion-basica`; la interfaz web inicial se desarrolla en `feat/frontend-basico`. El PR anterior del incremento del 25 % se mantiene intacto y no se mezcla con este corte. Los issues y el tablero GitHub organizan el backlog básico. El material anterior permanece como historial y no debe confundirse con la funcionalidad actualmente expuesta.

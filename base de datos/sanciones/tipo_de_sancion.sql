@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS tipo_de_sancion (
+    id_tipo_sancion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_tipo_sancion VARCHAR(100) NOT NULL UNIQUE
+);

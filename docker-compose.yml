@@ -1,16 +1,19 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
+    stop_grace_period: 30s
     environment:
       POSTGRES_DB: epcc_prestamos
       POSTGRES_USER: epcc
       POSTGRES_PASSWORD: epcc
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U epcc -d epcc_prestamos"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "epcc", "-d", "epcc_prestamos"]
+      start_period: 10s
       interval: 5s
       timeout: 5s
       retries: 10

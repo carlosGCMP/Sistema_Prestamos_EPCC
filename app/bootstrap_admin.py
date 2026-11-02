@@ -16,7 +16,8 @@ def main() -> None:
         if session.scalar(
             select(Account.id).join(Person).where(Person.role == Role.INVENTORY_ADMIN)
         ):
-            raise SystemExit("Ya existe una cuenta administrativa; no se creó otra.")
+            print("Ya existe una cuenta administrativa; no se creó otra.")
+            return
         cui = input("CUI: ").strip()
         document_type = input("Tipo de documento [DNI]: ").strip() or "DNI"
         document_number = input("Número de documento: ").strip()

@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS estado_de_la_garantia (
+    id_estado BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_estado VARCHAR(50) NOT NULL UNIQUE
+);

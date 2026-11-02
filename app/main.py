@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -15,6 +18,7 @@ app = FastAPI(
 )
 app.include_router(router)
 install_error_handlers(app)
+frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 
 
 @app.get("/health", tags=["sistema"])
@@ -34,3 +38,6 @@ def readiness() -> dict[str, str]:
 
         raise HTTPException(status_code=503, detail="Base de datos no disponible") from error
     return {"status": "ready"}
+
+
+app.mount("/", StaticFiles(directory=frontend_directory, html=True), name="frontend")

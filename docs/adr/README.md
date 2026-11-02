@@ -6,4 +6,4 @@ Decisiones iniciales:
 
 - ADR-001: monolito modular con contextos delimitados.
 - ADR-002: FastAPI, SQLAlchemy y PostgreSQL.
-- ADR-003: API primero; frontend pendiente de validación.
+- [ADR-003: interfaz web básica servida por FastAPI](ADR-003-frontend-basico.md).
