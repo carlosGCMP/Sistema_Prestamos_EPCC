@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.infrastructure.models  # noqa: F401
-from app.infrastructure.database import Base, get_session
-from app.main import app as api
+import app.main as main
+from app.infrastructure import database
+from app.infrastructure.database import Base
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def session_factory() -> Generator[sessionmaker[Session]]:
         poolclass=StaticPool,
     )
     Base.metadata.create_all(engine)
-    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    factory = sessionmaker(bind=engine, expire_on_commit=False, autoflush=False)
     try:
         yield factory
     finally:
@@ -28,13 +29,14 @@ def session_factory() -> Generator[sessionmaker[Session]]:
 
 
 @pytest.fixture
-def client(session_factory: sessionmaker[Session]) -> Generator[TestClient]:
-    def override_session() -> Generator[Session]:
-        with session_factory() as session:
-            yield session
-            session.commit()
-
-    api.dependency_overrides[get_session] = override_session
-    with TestClient(api) as test_client:
+def client(
+    session_factory: sessionmaker[Session], monkeypatch: pytest.MonkeyPatch
+) -> Generator[TestClient]:
+    engine = session_factory.kw["bind"]
+    # Se usa la inicialización y la transacción reales, pero sobre SQLite aislado.
+    monkeypatch.setattr(database, "crear_sesion", session_factory)
+    monkeypatch.setattr(
+        main, "inicializar_base_datos", lambda: database.inicializar_base_datos(engine)
+    )
+    with TestClient(main.app) as test_client:
         yield test_client
-    api.dependency_overrides.clear()

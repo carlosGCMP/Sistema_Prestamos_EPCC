@@ -7,12 +7,13 @@ from sqlalchemy import select
 
 from app.application.basic_use_cases import audit
 from app.core.security import hash_password
-from app.infrastructure.database import SessionLocal
+from app.infrastructure.database import abrir_sesion, inicializar_base_datos
 from app.infrastructure.models import Account, Person, Role
 
 
 def main() -> None:
-    with SessionLocal.begin() as session:
+    inicializar_base_datos()
+    with abrir_sesion() as session:
         if session.scalar(
             select(Account.id).join(Person).where(Person.role == Role.INVENTORY_ADMIN)
         ):

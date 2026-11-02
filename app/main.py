@@ -1,12 +1,28 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.concurrency import run_in_threadpool
 
 from app.api.routes import install_error_handlers, router
-from app.infrastructure.database import engine
+from app.infrastructure.database import inicializar_base_datos
+
+
+@asynccontextmanager
+async def ciclo_de_vida(aplicacion: FastAPI) -> AsyncIterator[None]:
+    """Prepara la base antes de atender peticiones y libera el motor al detenerse."""
+    motor = await run_in_threadpool(inicializar_base_datos)
+    aplicacion.state.motor_base_datos = motor
+    try:
+        yield
+    finally:
+        aplicacion.state.motor_base_datos = None
+        motor.dispose()
+
 
 app = FastAPI(
     title="Sistema de Préstamos EPCC",
@@ -15,6 +31,7 @@ app = FastAPI(
         "API básica de usuarios, catálogo e inventario, y reservas para la EPCC. "
         "Las operaciones de préstamo todavía no están habilitadas."
     ),
+    lifespan=ciclo_de_vida,
 )
 app.include_router(router)
 install_error_handlers(app)
@@ -30,12 +47,13 @@ def healthcheck() -> dict[str, str]:
 @app.get("/health/ready", tags=["sistema"])
 def readiness() -> dict[str, str]:
     """Comprueba que también existe conectividad con la base de datos."""
+    motor = getattr(app.state, "motor_base_datos", None)
+    if motor is None:
+        raise HTTPException(status_code=503, detail="Base de datos no inicializada")
     try:
-        with engine.connect() as connection:
+        with motor.connect() as connection:
             connection.execute(text("SELECT 1"))
     except SQLAlchemyError as error:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=503, detail="Base de datos no disponible") from error
     return {"status": "ready"}
 

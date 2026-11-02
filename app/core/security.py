@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.settings import get_settings
-from app.infrastructure.database import get_session
+from app.infrastructure.database import obtener_sesion
 from app.infrastructure.models import Account, Person, PersonState, Role
 
 password_hash = PasswordHash.recommended()
@@ -43,7 +43,7 @@ def create_access_token(account: Account) -> str:
 
 def get_current_account(
     token: Annotated[str, Depends(oauth2_scheme)],
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[Session, Depends(obtener_sesion, scope="function")],
 ) -> Account:
     unauthorized = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_env: str = "development"
-    database_url: str = "postgresql+psycopg://epcc:epcc@localhost:5432/epcc_prestamos"
+    database_url: str = "postgresql+psycopg://epcc:epcc@localhost:5433/epcc_prestamos"
+    database_wait_seconds: int = Field(default=30, ge=1, le=300)
     jwt_secret: SecretStr = Field(default=SecretStr("dev-only-not-for-production-secret-32chars"))
     access_token_minutes: int = 30
 

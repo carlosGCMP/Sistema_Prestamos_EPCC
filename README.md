@@ -8,13 +8,13 @@ La rama `implementacion-basica` fija un alcance inicial y acotado; `feat/fronten
 
 El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. Incluye una interfaz web básica en HTML, CSS y JavaScript que consume la API. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
 
-Las migraciones versionadas existentes se conservan para evitar eliminar datos o reescribir el historial; el esquema físico aún contiene tablas de capacidades aplazadas. No se ejecuta una migración destructiva para borrarlas.
+El arranque valida las tablas existentes y crea las faltantes desde los modelos actuales, sin ejecutar migraciones ni borrar datos. Los SQL originales y las migraciones históricas se conservan intactos, pero no forman parte del arranque. La adaptación del nuevo diseño SQL al dominio todavía no está implementada.
 
 ## Tecnologías
 
 - Python 3.13 y FastAPI.
 - HTML, CSS y JavaScript nativo para el frontend básico, servido por FastAPI.
-- SQLAlchemy 2, Psycopg 3, PostgreSQL 16 y Alembic.
+- SQLAlchemy 2, Psycopg 3 y PostgreSQL 16.
 - Pydantic, JWT y Argon2id.
 - pytest, Ruff, mypy y Docker Compose.
 
@@ -23,17 +23,34 @@ Las migraciones versionadas existentes se conservan para evitar eliminar datos o
 Requisitos: Python 3.13+, Docker y Docker Compose.
 
 ```bash
-test -f .env || cp .env.example .env
+cp .env.example .env
 docker compose up -d db
-python3.13 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
-alembic upgrade head
-python -m app.bootstrap_admin
 uvicorn app.main:app --reload
 ```
 
-La documentación interactiva está en `http://127.0.0.1:8000/docs`; readiness está en `http://127.0.0.1:8000/health/ready`. El comando de bootstrap crea la primera cuenta de administración de forma interactiva; no hay credenciales predeterminadas.
+No sobrescribas `.env` si ya tiene tu configuración. PostgreSQL se espera hasta 30 segundos (configurable con `DATABASE_WAIT_SECONDS`). Si una tabla existente es incompatible, el arranque se detiene con una explicación; no modifica ni convierte sus datos.
+
+En Windows 11 con Docker Desktop y contenedores Linux, usa PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d db
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+uvicorn app.main:app --reload
+```
+
+La documentación interactiva está en `http://127.0.0.1:8000/docs`; readiness está en `http://127.0.0.1:8000/health/ready`.
+
+Las tablas se crean automáticamente, pero no se inventan credenciales. Si todavía no existe un administrador, créalo una sola vez desde otra terminal con el entorno virtual activado:
+
+```bash
+python -m app.bootstrap_admin
+```
 
 La interfaz web está en `http://127.0.0.1:8000/`. No requiere Node.js ni un proceso de frontend separado.
 
@@ -51,7 +68,7 @@ app/
   bootstrap_admin.py Alta interactiva del primer administrador
 frontend/            Interfaz HTML, CSS y JavaScript servida por FastAPI
 migrations/          Historial versionado del esquema PostgreSQL
-tests/               Pruebas automatizadas anteriores, pendientes de ajustar al corte
+tests/               Pruebas de conexión y escenarios funcionales anteriores
 docs/                Arquitectura, planificación y entregables
 .vscode/             Preferencias para ocultar artefactos locales del explorador
 ```
@@ -60,16 +77,19 @@ La documentación personal y los informes históricos no vigentes se conservan f
 
 La separación actual es técnica; los módulos activos comparten una API, una base PostgreSQL y transacciones SQLAlchemy. El navegador consume el backend por HTTP en el mismo origen; no se conecta directamente a PostgreSQL. Las capacidades diferidas no deben interpretarse como funciones disponibles.
 
+Para entender el código, comienza por [conexión y flujo del aplicativo](docs/11-conexion-y-flujo.md): explica el arranque, las sesiones, las transacciones y el recorrido de un formulario hasta PostgreSQL.
+
 ## Verificación estática disponible
 
 ```bash
 source .venv/bin/activate
+pytest tests/test_database.py tests/test_health.py
 ruff check app
 ruff format --check app
 mypy app
 ```
 
-La suite actual contiene escenarios de módulos avanzados anteriores y debe alinearse con el corte básico antes de usar `pytest` o `scripts/verify_postgresql.sh`; ese trabajo está en el issue [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15). Ruff y mypy pasan; no se ejecutó la suite automatizada.
+Las pruebas de conexión y salud se ejecutan sin PostgreSQL y verifican el arranque, la creación de tablas, el rechazo de esquemas incompatibles y las transacciones. La suite completa conserva dos fallos anteriores en `tests/test_auth_and_api.py` y `tests/test_lending_workflow.py`, porque esperan rutas de préstamos y políticas que la API básica no expone. La alineación de esos escenarios está pendiente en el issue [#15](https://github.com/carlosGCMP/Sistema_Prestamos_EPCC/issues/15).
 
 ## Documentación
 

@@ -48,7 +48,7 @@ from app.core.security import (
     verify_password,
 )
 from app.core.settings import get_settings
-from app.infrastructure.database import get_session
+from app.infrastructure.database import obtener_sesion
 from app.infrastructure.models import (
     Account,
     Category,
@@ -63,7 +63,8 @@ from app.infrastructure.models import (
 )
 
 router = APIRouter()
-SessionDep = Annotated[Session, Depends(get_session)]
+# Finaliza la transacción antes de enviar una respuesta de éxito al navegador.
+SessionDep = Annotated[Session, Depends(obtener_sesion, scope="function")]
 
 
 @router.post("/auth/token", response_model=TokenResponse, tags=["usuarios"])
