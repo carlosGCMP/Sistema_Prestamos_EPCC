@@ -31,7 +31,9 @@ Cliente HTTP ── JSON ── FastAPI
 | Calidad | Ruff y mypy | Formato, análisis estático y verificación de tipos. |
 | Entorno local | Docker Compose | Servicio reproducible de PostgreSQL. |
 
-No se incorpora frontend en este alcance. FastAPI/OpenAPI sirve para explorar y validar las operaciones mientras se estabiliza el dominio.
+## Interfaz web básica
+
+La carpeta `frontend/` contiene HTML semántico, CSS y JavaScript nativo. FastAPI la sirve desde el mismo origen (`/`), evitando una segunda aplicación, Node.js y configuración CORS en esta primera etapa. El navegador llama a los endpoints REST, mantiene el JWT en `sessionStorage` y nunca abre conexiones directas a PostgreSQL. Swagger (`/docs`) continúa disponible como herramienta de exploración de API, no como frontend final.
 
 ## Capas del código
 

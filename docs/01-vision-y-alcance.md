@@ -18,7 +18,7 @@ Construir incrementalmente una API sencilla para administrar usuarios, catálogo
 
 ## Fuera del alcance actual
 
-Políticas configurables, validación académica institucional, préstamos/entregas/devoluciones, renovaciones, garantías, incidencias, sanciones, apelaciones, integraciones externas y aplicación web/móvil.
+Políticas configurables, validación académica institucional, préstamos/entregas/devoluciones, renovaciones, garantías, incidencias, sanciones, apelaciones, integraciones externas y aplicación móvil nativa. La interfaz web presente es básica y no sustituye una experiencia institucional completa.
 
 ## Roles iniciales
 
