@@ -50,6 +50,69 @@ function showToast(message, isError = false) {
   refreshToastTimer = window.setTimeout(() => { toast.hidden = true; }, 4200);
 }
 
+function askConfirmation(title, message, acceptText = "Aceptar") {
+  const modal = document.querySelector("#modal-confirmar");
+  const accept = modal.querySelector('[data-action="aceptar-modal"]');
+  const cancel = modal.querySelector('[data-action="cerrar-modal"]');
+  modal.querySelector("#modal-confirmar-titulo").textContent = title;
+  modal.querySelector("#modal-confirmar-mensaje").textContent = message;
+  accept.textContent = acceptText;
+
+  return new Promise((resolve) => {
+    const finish = (confirmed) => {
+      modal.hidden = true;
+      accept.removeEventListener("click", onAccept);
+      cancel.removeEventListener("click", onCancel);
+      document.removeEventListener("keydown", onKeyDown);
+      resolve(confirmed);
+    };
+    const onAccept = () => finish(true);
+    const onCancel = () => finish(false);
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") finish(false);
+    };
+    accept.addEventListener("click", onAccept);
+    cancel.addEventListener("click", onCancel);
+    document.addEventListener("keydown", onKeyDown);
+    modal.hidden = false;
+    accept.focus();
+  });
+}
+
+function askReason(title, message, acceptText) {
+  const modal = document.querySelector("#modal-motivo");
+  const textarea = modal.querySelector("#modal-motivo-texto");
+  const accept = modal.querySelector('[data-action="aceptar-modal"]');
+  const cancel = modal.querySelector('[data-action="cerrar-modal"]');
+  modal.querySelector("#modal-motivo-titulo").textContent = title;
+  modal.querySelector("#modal-motivo-mensaje").textContent = message;
+  accept.textContent = acceptText;
+  textarea.value = "";
+
+  return new Promise((resolve) => {
+    const finish = (reason) => {
+      modal.hidden = true;
+      accept.removeEventListener("click", onAccept);
+      cancel.removeEventListener("click", onCancel);
+      document.removeEventListener("keydown", onKeyDown);
+      resolve(reason);
+    };
+    const onAccept = () => {
+      if (textarea.value.trim()) finish(textarea.value.trim());
+      else textarea.reportValidity();
+    };
+    const onCancel = () => finish(null);
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") finish(null);
+    };
+    accept.addEventListener("click", onAccept);
+    cancel.addEventListener("click", onCancel);
+    document.addEventListener("keydown", onKeyDown);
+    modal.hidden = false;
+    textarea.focus();
+  });
+}
+
 function errorMessage(payload, fallback) {
   const detail = payload?.detail;
   if (typeof detail === "string") return detail;
@@ -292,7 +355,12 @@ async function loadPeople() {
       deactivate.type = "button";
       deactivate.textContent = "Desactivar";
       deactivate.addEventListener("click", async () => {
-        if (!window.confirm(`¿Desactivar a ${person.full_name}?`)) return;
+        const confirmed = await askConfirmation(
+          "Desactivar usuario",
+          `¿Desactivar a ${person.full_name}? Ya no podrá iniciar sesión.`,
+          "Desactivar",
+        );
+        if (!confirmed) return;
         try {
           await request(`/people/${person.id}/deactivate`, { method: "POST" });
           showToast("La persona fue desactivada.");
@@ -334,8 +402,12 @@ function requiredText(formData, key) {
 }
 
 async function decideReservation(reservationId, confirm) {
-  const reason = confirm ? null : window.prompt("Indica el motivo del rechazo:");
-  if (!confirm && !reason?.trim()) return;
+  const reason = confirm ? null : await askReason(
+    "Rechazar reserva",
+    "Indica el motivo que se guardará en la solicitud.",
+    "Rechazar",
+  );
+  if (!confirm && !reason) return;
   try {
     await request(`/reservations/${reservationId}/decision`, {
       method: "POST", body: JSON.stringify({ confirm, reason: reason?.trim() || null }),
@@ -347,9 +419,16 @@ async function decideReservation(reservationId, confirm) {
 }
 
 async function cancelReservation(reservationId) {
-  if (!window.confirm("¿Cancelar esta reserva?")) return;
-  const motivo = isAdmin() ? window.prompt("Indica el motivo de cancelación:") : null;
-  if (isAdmin() && !motivo?.trim()) return;
+  const confirmed = await askConfirmation(
+    "Cancelar reserva",
+    "¿Deseas cancelar esta solicitud? Esta acción no se puede deshacer.",
+    "Cancelar reserva",
+  );
+  if (!confirmed) return;
+  const motivo = isAdmin()
+    ? await askReason("Motivo de cancelación", "Indica por qué se cancela la reserva.", "Confirmar")
+    : null;
+  if (isAdmin() && !motivo) return;
   try {
     const consulta = motivo ? `?reason=${encodeURIComponent(motivo.trim())}` : "";
     await request(`/reservations/${reservationId}/cancel${consulta}`, { method: "POST" });
