@@ -1,14 +1,16 @@
 # Sistema de Préstamos EPCC
 
-API para una implementación inicial del sistema de préstamos de bienes de la EPCC. El alcance activo se limita a usuarios, catálogo/inventario y reservas.
+Sistema de préstamos de bienes de la EPCC con interfaz web y API en Python.
 
 ## Estado actual
 
-La rama `implementacion-basica` fija un alcance inicial y acotado; `feat/frontend-basico` añade la primera interfaz web sobre esa base. Los porcentajes estiman alcance del proyecto; no representan cobertura de pruebas ni preparación para producción.
+Están habilitados usuarios, catálogo/inventario, reservas, **políticas, préstamos y vinculación académica**. La interfaz utiliza HTML, CSS y JavaScript nativo y consume la API desde el mismo servidor.
 
-El flujo habilitado permite registrar y autenticar usuarios, administrar categorías/tipos/fichas/unidades de inventario, y solicitar, aprobar, rechazar y cancelar reservas con control de intervalos y disponibilidad. Incluye una interfaz web básica en HTML, CSS y JavaScript que consume la API. No incluye políticas configurables, préstamos, garantías, incidentes, sanciones ni integraciones institucionales. Los servicios avanzados de iteraciones anteriores se conservan en el historial técnico, pero no están expuestos por la API básica.
+El recorrido es **solicitar reserva → confirmar → entregar → devolver**. Se aplican siete políticas: cuentas activas, bienes disponibles, máximo inicial de **2 bienes simultáneos por persona y tipo**, duración de **3 días corridos para estudiantes y 7 para docentes**, sin cruces, aprobación administrativa sin autoconfirmación y cancelación controlada. Las políticas se publican por versiones; las reservas confirmadas y los préstamos conservan las condiciones aprobadas.
 
-El esquema físico utiliza las 43 tablas de los SQL originales, más `bien` y `prestamo`, con nombres y columnas en español e identificadores BIGINT. El arranque valida las tablas existentes, crea las faltantes y carga catálogos sin ejecutar migraciones ni borrar datos. Los SQL originales y las migraciones históricas se conservan intactos, pero no se ejecutan. Consulta las decisiones y relaciones en [esquema en español](docs/12-esquema-espanol.md).
+La vinculación académica permite registrar manualmente períodos, información académica y matrículas. No incluye consulta institucional automática, bloqueos académicos, multas, garantías, incidentes, sanciones, renovaciones ni prórrogas. Consulta la explicación sencilla en [políticas y guía de uso](docs/13-politicas-y-guia-de-uso.md).
+
+El esquema físico utiliza las 43 tablas de los SQL originales, más `bien` y `prestamo`, con nombres y columnas en español e identificadores BIGINT. Los módulos nuevos reutilizan esas 45 tablas sin cambiar columnas. El arranque valida las tablas existentes, crea solo las faltantes y carga catálogos y políticas iniciales sin ejecutar migraciones ni borrar datos. Si ya existe una versión para un rol y tipo, no la reemplaza. Los SQL originales, la conexión protegida y las migraciones históricas se conservan intactos. Consulta las relaciones en [esquema en español](docs/12-esquema-espanol.md).
 
 ## Tecnologías
 
@@ -33,7 +35,7 @@ uvicorn app.main:app --reload
 
 No sobrescribas `.env` si ya tiene tu configuración. PostgreSQL se espera hasta 30 segundos (configurable con `DATABASE_WAIT_SECONDS`). Si una tabla existente es incompatible, el arranque se detiene con una explicación; no modifica ni convierte sus datos.
 
-El esquema anterior con UUID y tablas en inglés no se transforma automáticamente ni se mezcla con el nuevo. Su recreación requiere autorización y respaldo. La presencia de las 45 tablas no habilita por sí sola las rutas de los módulos avanzados.
+El esquema anterior con UUID y tablas en inglés no se transforma automáticamente ni se mezcla con el nuevo. Su recreación requiere autorización y respaldo. Las tablas de capacidades fuera del alcance no habilitan sus procesos por sí solas.
 
 En Windows 11 con Docker Desktop y contenedores Linux, usa PowerShell:
 
@@ -87,7 +89,7 @@ app/
   bootstrap_admin.py Alta interactiva del primer administrador
 frontend/            Interfaz HTML, CSS y JavaScript servida por FastAPI
 migrations/          Historial versionado del esquema PostgreSQL
-tests/               Pruebas de conexión y escenarios funcionales anteriores
+tests/               Pruebas de conexión, permisos y recorridos funcionales
 docs/                Arquitectura, planificación y entregables
 .vscode/             Preferencias para ocultar artefactos locales del explorador
 ```
@@ -98,18 +100,18 @@ La separación actual es técnica; los módulos activos comparten una API, una b
 
 Para entender el código, comienza por [conexión y flujo del aplicativo](docs/11-conexion-y-flujo.md): explica el arranque, las sesiones, las transacciones y el recorrido de un formulario hasta PostgreSQL.
 
-## Verificación estática disponible
+## Verificación
 
 ```bash
 source .venv/bin/activate
-pytest tests/test_database.py tests/test_health.py
-ruff check app
-ruff format --check app
+pytest
+ruff check app tests
+ruff format --check app tests
 mypy app
 ```
 
-La suite se ejecuta con `pytest`, sin acceder a PostgreSQL local. Comprueba las 45 tablas y sus claves foráneas, los identificadores BIGINT, el arranque y las transacciones, los permisos, la jerarquía tipo/categoría y el flujo de solicitar, confirmar y cancelar reservas. Los escenarios HTTP están alineados con el alcance operativo actual, no con rutas históricas sin implementar.
+La suite utiliza SQLite aislado, sin acceder a PostgreSQL local. Comprueba las 45 tablas y sus claves foráneas, BIGINT, arranque, transacciones, permisos, inventario, reservas, versiones de políticas, entregas, devoluciones y registros académicos. No exige instalar herramientas de navegador ni Node.js.
 
 ## Documentación
 
-Comienza por el [índice de documentación](docs/README.md), revisa el [plan básico](docs/09-alcance-basico-y-plan.md) y el [tablero Kanban](docs/10-tablero-kanban-local.md). Los documentos de incrementos anteriores se conservan como referencias históricas.
+Comienza por [políticas y guía de uso](docs/13-politicas-y-guia-de-uso.md) o por el [índice de documentación](docs/README.md). Los planes básicos y documentos de incrementos anteriores se conservan como referencias históricas, no como descripción de funciones pendientes actuales.

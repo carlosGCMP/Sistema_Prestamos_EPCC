@@ -5,3 +5,7 @@ cd /home/javier/Documentos/clone/Sistema_Prestamos_EPCC
 
 python -m app.bootstrap_admin  // Creacion de Usuario de admin local
 uvicorn app.main:app --reload  //ejecutar el servidor
+
+## Usar este comando ##
+
+./.venv/bin/python -m uvicorn app.main:app --reload

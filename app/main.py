@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
+from app.api.modulos import router as modulos_router
 from app.api.routes import install_error_handlers, router
 from app.infrastructure.database import inicializar_base_datos
 
@@ -28,12 +29,13 @@ app = FastAPI(
     title="Sistema de Préstamos EPCC",
     version="0.1.0",
     description=(
-        "API básica de usuarios, catálogo e inventario, y reservas para la EPCC. "
-        "Las operaciones de préstamo todavía no están habilitadas."
+        "Usuarios, inventario, reservas, préstamos, políticas y vinculación académica. "
+        "Límite de 3 días para estudiantes y 7 para docentes."
     ),
     lifespan=ciclo_de_vida,
 )
 app.include_router(router)
+app.include_router(modulos_router)
 install_error_handlers(app)
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 

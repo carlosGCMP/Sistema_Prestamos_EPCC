@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -263,6 +264,17 @@ def cancel_reservation_route(
 
 
 def install_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(
+        _request: Request, error: RequestValidationError
+    ) -> JSONResponse:
+        # No devolver el cuerpo recibido: puede contener la contraseña temporal.
+        detalles = [
+            {"loc": list(detalle["loc"]), "msg": detalle["msg"], "type": detalle["type"]}
+            for detalle in error.errors()
+        ]
+        return JSONResponse(status_code=422, content={"detail": detalles})
+
     @app.exception_handler(UseCaseError)
     async def use_case_error_handler(_request: Request, error: UseCaseError) -> JSONResponse:
         return JSONResponse(status_code=error.status_code, content={"detail": error.detail})

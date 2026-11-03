@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#163b35">
   <title>Sistema de Préstamos EPCC</title>
   <link rel="stylesheet" href="/styles.css">
-  <script src="/app.js" defer></script>
+  <script type="module" src="/app.js"></script>
 </head>
 <body>
 
@@ -43,12 +43,12 @@
       <nav class="main-nav">
         <button class="nav-link active" data-view="inventory-view" type="button">Inventario</button>
         <button class="nav-link" data-view="reservations-view" type="button">Reservas</button>
-        <button class="nav-link" data-view="loans-view" type="button" disabled title="Tablas disponibles; módulo HTTP pendiente">Préstamos (pendiente)</button>
+        <button class="nav-link" data-view="loans-view" type="button">Préstamos</button>
         <button class="nav-link admin-only" data-view="people-view" type="button" hidden>Usuarios</button>
-        <button class="nav-link admin-only" data-view="academic-view" type="button" hidden disabled title="Tablas disponibles; módulo HTTP pendiente">Vinculación Académica (pendiente)</button>
-        <button class="nav-link admin-only" data-view="policies-view" type="button" hidden disabled title="Tablas disponibles; módulo HTTP pendiente">Políticas (pendiente)</button>
+        <button class="nav-link admin-only" data-view="academic-view" type="button" hidden>Vinculación Académica</button>
+        <button class="nav-link" data-view="policies-view" type="button">Políticas</button>
       </nav>
-      <div class="sidebar-note"><span class="status-dot"></span><span>API conectada</span></div>
+      <div class="sidebar-note" role="status"><span id="api-status-dot" class="status-dot"></span><span id="api-status">Comprobando API…</span></div>
     </aside>
 
     <main class="content">
@@ -125,6 +125,7 @@
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
         <p class="muted">Las reservas se solicitan para una unidad y un intervalo de tiempo.</p>
+        <p id="reservation-policy" class="muted">Máximo 2 bienes del mismo tipo: 3 días para estudiantes y 7 para docentes.</p>
 
         <section class="panel requester-only" id="reservation-create-panel">
           <div class="panel-heading"><div><h2>Solicitar una reserva</h2><p>Solo para estudiantes y docentes con cuenta activa.</p></div></div>
@@ -162,13 +163,13 @@
           <div><p class="eyebrow">GESTIÓN DE PRÉSTAMOS</p><h1>Préstamos</h1></div>
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
-        <p class="muted">Registra la entrega, devolución y renovación de unidades reservadas.</p>
+        <p class="muted">Registra entregas y devoluciones. No se aplican multas ni renovaciones.</p>
 
         <section class="panel admin-only" id="loan-create-panel">
           <div class="panel-heading"><div><h2>Registrar nuevo préstamo</h2><p>Selecciona una reserva confirmada para iniciar el préstamo.</p></div></div>
           <form id="loan-form" class="reservation-form">
             <label>Reserva confirmada<select name="reservation_id" required></select></label>
-            <label>Fecha de entrega<input name="loan_date" type="datetime-local" required></label>
+            <p class="muted">La hora de entrega se registra automáticamente. La reserva debe estar dentro de su horario.</p>
             <label>Fecha de devolución esperada<input name="due_date" type="datetime-local" required></label>
             <label>Modalidad de uso
               <select name="modalidad_uso" required>
@@ -260,90 +261,42 @@
 
 <!----VINCULACIÓN ACADÉMICA  -->
       <section id="academic-view" class="page-view" hidden>
-        <div class="page-heading">
-          <div><p class="eyebrow">VINCULACIÓN ACADÉMICA</p><h1>Records académicos</h1></div>
-          <button class="button secondary refresh-button" type="button">Actualizar</button>
-        </div>
-        <p class="muted">Gestiona los records académicos, matrículas y periodos. Determinan la condición académica del estudiante.</p>
-
+        <div class="page-heading"><div><p class="eyebrow">VINCULACIÓN ACADÉMICA</p><h1>Información académica</h1></div><button class="button secondary refresh-button" type="button">Actualizar</button></div>
+        <p class="muted">Registro manual de períodos, información del estudiante y matrículas. No hay consulta automática a la universidad ni bloqueos académicos.</p>
         <section class="panel">
-          <div class="panel-heading"><div><h2>Periodos académicos</h2><p>Un periodo contiene el intervalo y la fecha límite de devoluciones.</p></div></div>
-          <form id="academic-period-form" class="compact-form" style="margin-bottom:18px">
-            <h3>Registrar periodo</h3>
-            <div class="forms-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
-              <label>Año<input name="anio" type="number" min="2000" max="2100" required></label>
-              <label>Ciclo<input name="ciclo" required maxlength="10" placeholder="I o II"></label>
-              <label>Días no hábiles (separados por coma, YYYY-MM-DD)<input name="dias_no_habiles" placeholder="2026-05-01, 2026-06-29"></label>
-              <label>Inicio<input name="starts_at" type="date" required></label>
-              <label>Fin<input name="ends_at" type="date" required></label>
-              <label>Fecha cierre devoluciones<input name="fecha_cierre_devoluciones" type="date" required></label>
-            </div>
-            <button class="button secondary" type="submit">Crear periodo</button>
+          <h2>Períodos académicos</h2>
+          <form id="academic-period-form" class="forms-grid">
+            <label>Nombre del semestre<input name="nombre_semestre" required minlength="2" maxlength="50" placeholder="2026-II"></label>
+            <label>Inicio<input name="fecha_inicio" type="date" required></label>
+            <label>Fin<input name="fecha_fin" type="date" required></label>
+            <button class="button secondary" type="submit">Crear período</button>
           </form>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Año</th><th>Ciclo</th><th>Inicio</th><th>Fin</th><th>Cierre devoluciones</th><th>Días no hábiles</th></tr></thead>
-              <tbody id="academic-periods-table"></tbody>
-            </table>
-          </div>
-          <p id="academic-periods-empty" class="empty-state" hidden>No hay periodos registrados.</p>
+          <div class="table-wrap"><table><thead><tr><th>Período</th><th>Inicio</th><th>Fin</th></tr></thead><tbody id="academic-periods-table"></tbody></table></div>
+          <p id="academic-periods-empty" class="empty-state" hidden>No hay períodos registrados.</p>
         </section>
-
         <section class="panel">
-          <div class="panel-heading"><div><h2>Record académico</h2><p>El record determina la condición académica del estudiante.</p></div></div>
-          <form id="academic-record-form" class="compact-form">
-            <h3>Crear o actualizar record</h3>
-            <div class="forms-grid">
-              <label>Estudiante<select name="persona_id" required></select></label>
-              <label>Plan de estudios<input name="plan_estudios" required maxlength="100" placeholder="2018"></label>
-              <label>Escuela profesional<input name="escuela_profesional" required value="EPCC" maxlength="120"></label>
-              <label>Situación académica<select name="situacion" required>
-                <option value="MATRICULADO">Matriculado</option>
-                <option value="NO_MATRICULADO">No matriculado</option>
-                <option value="EGRESADO">Egresado</option>
-                <option value="GRADUADO">Graduado</option>
-                <option value="RETIRADO">Retirado</option>
-                <option value="SUSPENDIDO">Suspendido</option>
-              </select></label>
-              <label>Fecha de egreso (opcional)<input name="fecha_egreso" type="date"></label>
-            </div>
-            <button class="button secondary" type="submit">Guardar record</button>
+          <h2>Información del estudiante</h2>
+          <form id="academic-record-form" class="forms-grid">
+            <label>Estudiante<select name="persona_id" required></select></label>
+            <label>Período de la información<input name="periodo" required minlength="2" maxlength="30" placeholder="2026-II"></label>
+            <label>Situación<select name="situacion" required><option>MATRICULADO</option><option>NO_MATRICULADO</option><option>EGRESADO</option><option>GRADUADO</option><option>RETIRADO</option><option>SUSPENDIDO</option></select></label>
+            <label>Promedio acumulado<input name="promedio_acumulado" type="number" min="0" max="99.99" step="0.01" value="0" required></label>
+            <label>Créditos aprobados<input name="creditos_aprobados" type="number" min="0" value="0" required></label>
+            <label>Créditos reprobados<input name="creditos_reprobados" type="number" min="0" value="0" required></label>
+            <label>Créditos cursando<input name="creditos_cursando" type="number" min="0" value="0" required></label>
+            <button class="button secondary" type="submit">Guardar información</button>
           </form>
-
-          <div class="table-wrap" style="margin-top:18px">
-            <table>
-              <thead><tr>
-                <th>CUI</th><th>Estudiante</th><th>Plan</th><th>Situación</th><th>Condición actual</th><th>Egreso</th>
-              </tr></thead>
-              <tbody id="academic-records-table"></tbody>
-            </table>
-          </div>
-          <p id="academic-records-empty" class="empty-state" hidden>No hay records registrados.</p>
+          <div class="table-wrap"><table><thead><tr><th>CUI</th><th>Estudiante</th><th>Período</th><th>Situación</th><th>Promedio</th><th>Aprobados</th><th>Reprobados</th><th>Cursando</th><th>Acciones</th></tr></thead><tbody id="academic-records-table"></tbody></table></div>
+          <p id="academic-records-empty" class="empty-state" hidden>No hay información registrada.</p>
         </section>
-
         <section class="panel">
-          <div class="panel-heading"><div><h2>Matrículas</h2><p>El número de matrícula determina si el estudiante está en cuarta matrícula.</p></div></div>
-          <form id="academic-matricula-form" class="compact-form">
-            <h3>Registrar matrícula</h3>
-            <div class="forms-grid">
-              <label>Estudiante (record)<select name="record_id" required></select></label>
-              <label>Periodo<select name="periodo_id" required></select></label>
-              <label>Semestre<input name="semestre" type="number" min="1" max="20" required></label>
-              <label>N° de vez de matrícula<input name="numero_vez_matricula" type="number" min="1" max="10" required></label>
-              <label>Créditos inscritos<input name="creditos_inscritos" type="number" min="0" max="40" required></label>
-              <label>Estado<select name="estado" required><option>VIGENTE</option><option>ANULADA</option><option>CERRADA</option></select></label>
-            </div>
+          <h2>Matrículas</h2>
+          <form id="academic-matricula-form" class="forms-grid">
+            <label>Estudiante<select name="persona_id" required></select></label>
+            <label>Período<select name="id_semestre" required></select></label>
             <button class="button secondary" type="submit">Registrar matrícula</button>
           </form>
-
-          <div class="table-wrap" style="margin-top:18px">
-            <table>
-              <thead><tr>
-                <th>CUI</th><th>Estudiante</th><th>Plan</th><th>Periodo</th><th>Semestre</th><th>N° matrícula</th><th>Créditos</th><th>Estado</th><th>¿Cuarta?</th>
-              </tr></thead>
-              <tbody id="academic-matriculas-table"></tbody>
-            </table>
-          </div>
+          <div class="table-wrap"><table><thead><tr><th>CUI</th><th>Estudiante</th><th>Período</th><th>Registrada</th></tr></thead><tbody id="academic-matriculas-table"></tbody></table></div>
           <p id="academic-matriculas-empty" class="empty-state" hidden>No hay matrículas registradas.</p>
         </section>
       </section>
@@ -354,51 +307,19 @@
           <div><p class="eyebrow">POLÍTICAS DE PRÉSTAMO</p><h1>Políticas</h1></div>
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
-        <p class="muted">Cada política define las condiciones aplicables a un préstamo. Se versionan: al cambiar, se publica una nueva versión.</p>
-
-        <section class="panel">
-          <div class="panel-heading"><div><h2>Registrar política</h2><p>Al crear, se publica como versión 1 en estado BORRADOR hasta que se apruebe.</p></div></div>
-          <form id="policy-form" class="forms-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-            <fieldset class="fieldset" style="grid-column:span 3">
-              <legend>Criterio de aplicación</legend>
-              <div class="forms-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
-                <label>Alcance<select name="alcance" required>
-                  <option value="GENERAL">General</option>
-                  <option value="ROL">Por rol</option>
-                  <option value="ROL_TIPO_BIEN">Por rol y tipo</option>
-                  <option value="ROL_CONDICION_ACADEMICA">Por rol y condición</option>
-                </select></label>
-                <label>Rol<select name="rol"><option value="">—</option><option>ESTUDIANTE</option><option>DOCENTE</option><option>PERSONAL_ADMINISTRATIVO</option></select></label>
-                <label>Tipo de bien<select name="tipo_bien_id"><option value="">—</option></select></label>
-                <label>Condición académica<select name="condicion_academica"><option value="">—</option><option>REGULAR</option><option>CUARTA_MATRICULA</option><option>NO_MATRICULADO</option><option>EGRESADO_O_GRADUADO</option><option>FUERA_DE_LA_ESCUELA</option></select></label>
-              </div>
-            </fieldset>
-
-            <fieldset class="fieldset" style="grid-column:span 3">
-              <legend>Vigencia</legend>
-              <div class="forms-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
-                <label>Inicio<input name="vigencia_inicio" type="date" required></label>
-                <label>Fin<input name="vigencia_fin" type="date" required></label>
-              </div>
-            </fieldset>
-
-            <fieldset class="fieldset" style="grid-column:span 3">
-              <legend>Condiciones del préstamo</legend>
-              <div class="forms-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
-                <label>Límite simultáneo<input name="limite_simultaneo" type="number" min="1" max="20" required></label>
-                <label>Duración máxima<input name="duracion_maxima" type="number" min="1" required></label>
-                <label>Unidad de tiempo<select name="unidad_tiempo" required><option>HORAS</option><option selected>DIAS</option></select></label>
-                <label>Modalidad<select name="modalidad_uso" required><option>EN_SITIO</option><option>RETIRO</option></select></label>
-                <label class="checkbox-label"><input name="garantia_exigible" type="checkbox"> Exige garantía</label>
-                <label class="checkbox-label"><input name="permite_renovacion" type="checkbox" checked> Permite renovación</label>
-                <label>Límite renovaciones<input name="limite_renovaciones" type="number" min="0" max="10" value="1"></label>
-                <label>Tolerancia (días)<input name="tolerancia_retraso" type="number" min="0" step="0.5" value="0"></label>
-                <label>Tarifa por día (S/)<input name="tarifa_dia_retraso" type="number" min="0" step="0.01" value="0"></label>
-                <label>Días de bloqueo<input name="dias_bloqueo_por_retraso" type="number" min="0" max="365" value="0"></label>
-              </div>
-            </fieldset>
-
-            <button class="button primary" type="submit" style="grid-column:span 3">Crear política</button>
+        <p class="muted">Máximo 2 bienes del mismo tipo. Estudiantes: 3 días corridos; docentes: 7. Una versión nueva no cambia las reservas ya confirmadas.</p>
+        <section class="panel admin-only" hidden>
+          <h2>Publicar una versión</h2><p>Se conserva el historial. Los campos de inicio y fin de vigencia son opcionales.</p>
+          <form id="policy-form" class="forms-grid">
+            <label>Nombre<input name="name" required minlength="2" maxlength="120" placeholder="Préstamo de laptops"></label>
+            <label>Tipo de bien<select name="item_type_id" required></select></label>
+            <label>Rol<select name="role" required><option value="ESTUDIANTE">Estudiante</option><option value="DOCENTE">Docente</option></select></label>
+            <label>Máximo simultáneo<input name="max_units" type="number" min="1" max="2" value="2" required></label>
+            <label>Duración en días corridos<input name="max_duration" type="number" min="1" max="3" value="3" required></label>
+            <label class="checkbox-label"><input name="permitted" type="checkbox" checked> Permitir reservas</label>
+            <label>Inicio de vigencia (vacío: ahora)<input name="valid_from" type="datetime-local"></label>
+            <label>Fin de vigencia (opcional)<input name="valid_until" type="datetime-local"></label>
+            <button class="button primary" type="submit">Publicar nueva versión</button>
           </form>
         </section>
 
@@ -407,7 +328,7 @@
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>Criterio</th><th>Versión</th><th>Límite</th><th>Duración</th><th>Renovable</th><th>Estado</th><th>Vigencia</th><th>Acciones</th>
+                <th>Tipo</th><th>Rol</th><th>Versión</th><th>Límite</th><th>Días</th><th>Permiso</th><th>Vigencia</th><th>Estado</th><th class="admin-only">Acciones</th>
               </tr></thead>
               <tbody id="policies-table"></tbody>
             </table>

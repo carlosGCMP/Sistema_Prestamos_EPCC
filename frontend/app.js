@@ -1,3 +1,5 @@
+import { crearModulos } from "./modulos.js";
+
 const API = "";
 const tokenKey = "epcc_access_token";
 const roleNames = {
@@ -62,12 +64,19 @@ async function request(path, options = {}) {
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(`${API}${path}`, { ...options, headers });
+  let response;
+  try {
+    response = await fetch(`${API}${path}`, { ...options, headers });
+  } catch {
+    estadoConexion(false);
+    throw new Error("No se pudo conectar con la API. Comprueba que Uvicorn siga funcionando y vuelve a intentar.");
+  }
   if (response.status === 204) return null;
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     if (response.status === 401 && token) logout(false);
-    throw new Error(errorMessage(payload, `La solicitud falló (${response.status})`));
+    if (response.status === 503) estadoConexion(false);
+    throw new Error(errorMessage(payload, response.status >= 500 ? "La API no pudo completar la operación; revisa la terminal del servidor." : `La solicitud falló (${response.status})`));
   }
   return payload;
 }
@@ -124,6 +133,7 @@ function showDashboard(person) {
     element.hidden = !requester;
   });
   document.querySelector("#reservations-heading").textContent = isAdmin() ? "Todas las reservas" : "Mis reservas";
+  activateView("inventory-view", false);
   loadDashboard().catch((error) => showToast(error.message, true));
 }
 
@@ -134,6 +144,9 @@ function showLogin(error = "") {
   const message = document.querySelector("#login-error");
   message.textContent = error;
   message.hidden = !error;
+  document.querySelectorAll(".modal").forEach((modal) => { modal.hidden = true; });
+  document.querySelectorAll("tbody").forEach((body) => body.replaceChildren());
+  modulos.limpiar();
 }
 
 async function logout(sendRequest = true) {
@@ -144,20 +157,27 @@ async function logout(sendRequest = true) {
   showLogin();
 }
 
-function activateView(viewId) {
+function activateView(viewId, cargar = true) {
   document.querySelectorAll(".page-view").forEach((view) => { view.hidden = view.id !== viewId; });
   document.querySelectorAll(".nav-link").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === viewId);
   });
+  if (!cargar) return;
   if (viewId === "people-view") loadPeople().catch((error) => showToast(error.message, true));
   if (viewId === "reservations-view") loadReservations().catch((error) => showToast(error.message, true));
   if (viewId === "inventory-view") loadInventory().catch((error) => showToast(error.message, true));
+  if (viewId === "policies-view") modulos.cargarPoliticas().catch((error) => showToast(error.message, true));
+  if (viewId === "loans-view") loadReservations().then(() => modulos.cargarPrestamos()).catch((error) => showToast(error.message, true));
+  if (viewId === "academic-view") modulos.cargarAcademico().catch((error) => showToast(error.message, true));
 }
 
 async function loadDashboard() {
   await loadInventory();
   await loadReservations();
   if (isAdmin()) await loadPeople();
+  await modulos.cargarPoliticas();
+  await modulos.cargarPrestamos();
+  if (isAdmin()) await modulos.cargarAcademico();
 }
 
 let inventoryCache = { categories: [], types: [], items: [], units: [] };
@@ -211,6 +231,7 @@ function dateLabel(value) {
 
 async function loadReservations() {
   const reservations = await request("/reservations");
+  modulos.actualizarReservas(reservations);
   const body = document.querySelector("#reservations-table");
   body.replaceChildren();
   for (const reservation of reservations) {
@@ -224,7 +245,7 @@ async function loadReservations() {
     addBadge(makeCell(row, ""), reservation.state);
     if (isAdmin()) makeCell(row, reservation.decision_reason);
     const actions = document.createElement("td");
-    if (isAdmin() && reservation.state === "PENDIENTE") {
+    if (isAdmin() && reservation.state === "PENDIENTE" && reservation.applicant_id !== currentPerson.applicant_id) {
       const accept = document.createElement("button");
       accept.className = "button small primary";
       accept.type = "button";
@@ -238,7 +259,7 @@ async function loadReservations() {
       reject.addEventListener("click", () => decideReservation(reservation.id, false));
       actions.append(reject, document.createTextNode(" "));
     }
-    if (["PENDIENTE", "CONFIRMADA"].includes(reservation.state)) {
+    if (["PENDIENTE", "CONFIRMADA"].includes(reservation.state) && (isAdmin() || new Date(reservation.starts_at) > new Date())) {
       const cancel = document.createElement("button");
       cancel.className = "button small quiet";
       cancel.type = "button";
@@ -292,7 +313,10 @@ async function submitJsonForm(form, path, convert, success, after) {
   try {
     await request(path, { method: "POST", body: JSON.stringify(convert(new FormData(form))) });
     form.reset();
-    if (after) await after();
+    if (after) {
+      try { await after(); }
+      catch { showToast(`${success} No se pudo actualizar la vista; pulsa Actualizar.`, true); return; }
+    }
     showToast(success);
   } catch (error) {
     showToast(error.message, true);
@@ -324,8 +348,11 @@ async function decideReservation(reservationId, confirm) {
 
 async function cancelReservation(reservationId) {
   if (!window.confirm("¿Cancelar esta reserva?")) return;
+  const motivo = isAdmin() ? window.prompt("Indica el motivo de cancelación:") : null;
+  if (isAdmin() && !motivo?.trim()) return;
   try {
-    await request(`/reservations/${reservationId}/cancel`, { method: "POST" });
+    const consulta = motivo ? `?reason=${encodeURIComponent(motivo.trim())}` : "";
+    await request(`/reservations/${reservationId}/cancel${consulta}`, { method: "POST" });
     showToast("Reserva cancelada.");
     await loadReservations();
     await loadInventory();
@@ -339,9 +366,7 @@ document.querySelector("#login-form").addEventListener("submit", async (event) =
   setLoading(button, true);
   try {
     const body = new URLSearchParams(new FormData(form));
-    const response = await fetch("/auth/token", { method: "POST", body });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(errorMessage(payload, "No fue posible iniciar sesión."));
+    const payload = await request("/auth/token", { method: "POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded" } });
     sessionStorage.setItem(tokenKey, payload.access_token);
     form.reset();
     const person = await request("/me");
@@ -417,6 +442,7 @@ document.querySelector("#person-form").addEventListener("submit", (event) => {
     person.first_names = person.first_names.trim();
     person.last_names = person.last_names.trim();
     person.end_date = person.end_date || null;
+    if (person.end_date && person.end_date <= person.start_date) throw new Error("La fecha de fin debe ser posterior a la fecha de inicio, o quedar vacía.");
     person.is_admin = selectedRole !== "ESTUDIANTE" && data.get("is_admin") === "on";
     person.start_date = person.start_date || new Date().toISOString().slice(0, 10);
     person.semester = person.semester ? Number(person.semester) : null;
@@ -432,13 +458,42 @@ document.querySelector("#reservation-form").addEventListener("submit", (event) =
   submitJsonForm(form, "/reservations", (data) => ({
     unit_id: data.get("unit_id"),
     starts_at: new Date(data.get("starts_at")).toISOString(),
-    ends_at: new Date(data.get("ends_at")).toISOString(),
+    ends_at: validarIntervalo(data.get("starts_at"), data.get("ends_at")),
     intended_use: requiredText(data, "intended_use"),
   }), "Solicitud de reserva enviada.", async () => {
     await loadInventory();
     await loadReservations();
   });
 });
+
+function validarIntervalo(desde, hasta) {
+  if (new Date(desde) <= new Date() || new Date(hasta) <= new Date(desde)) {
+    throw new Error("La reserva debe comenzar en el futuro y terminar después de su inicio.");
+  }
+  const maximo = currentPerson?.role === "DOCENTE" ? 7 : 3;
+  if (new Date(hasta) - new Date(desde) > maximo * 86400000) throw new Error(`La duración máxima es ${maximo} días corridos.`);
+  return new Date(hasta).toISOString();
+}
+
+function estadoConexion(disponible) {
+  document.querySelector("#api-status").textContent = disponible ? "API disponible" : "API sin conexión";
+  document.querySelector("#api-status-dot").classList.toggle("offline", !disponible);
+}
+
+async function verificarConexion() {
+  try {
+    const respuesta = await fetch("/health/ready", { signal: AbortSignal.timeout(5000) });
+    const datos = await respuesta.json();
+    estadoConexion(respuesta.ok && datos.status === "ready");
+  } catch { estadoConexion(false); }
+}
+
+const modulos = crearModulos({ request, showToast, submitJsonForm, fillSelect, makeCell,
+  dateLabel, isAdmin, getCatalogo: () => inventoryCache, refrescar: loadDashboard });
+verificarConexion();
+window.setInterval(verificarConexion, 15000);
+window.addEventListener("offline", () => estadoConexion(false));
+window.addEventListener("online", verificarConexion);
 
 const savedToken = sessionStorage.getItem(tokenKey);
 if (savedToken) {

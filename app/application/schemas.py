@@ -1,9 +1,9 @@
 from datetime import date, datetime
-from decimal import Decimal
 from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, model_validator
 
+from app.core.reglas import DIAS_POR_ROL, MAXIMO_BIENES
 from app.infrastructure.models import (
     LoanState,
     PersonState,
@@ -97,6 +97,7 @@ class PersonOut(ORMModel):
     role: Role
     state: PersonState
     is_admin: bool
+    applicant_id: Id | None = None
 
 
 class AccountOut(ORMModel):
@@ -174,20 +175,28 @@ class UnitOut(ORMModel):
 
 
 class PolicyCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=2, max_length=120)
-    role: Role | None = None
-    item_type_id: Id | None = None
-    max_units: int = Field(ge=1, le=100)
-    max_duration: int = Field(ge=1, le=365)
-    duration_unit: TimeUnit
-    allowed_modes: list[UseMode] = Field(min_length=1)
-    requires_academic_eligibility: bool = False
-    allows_renewal: bool = False
-    max_renewals: int = Field(default=0, ge=0, le=20)
-    late_grace_minutes: int = Field(default=0, ge=0, le=10080)
-    fine_per_day: Decimal = Field(default=Decimal("0"), ge=0, max_digits=10, decimal_places=2)
-    valid_from: datetime
+    role: Role
+    item_type_id: Id
+    max_units: int = Field(default=MAXIMO_BIENES, ge=1, le=MAXIMO_BIENES)
+    max_duration: int = Field(ge=1, le=7)
+    duration_unit: TimeUnit = TimeUnit.DAYS
+    permitted: bool = True
+    valid_from: datetime | None = None
     valid_until: datetime | None = None
+
+    @model_validator(mode="after")
+    def validar_limites(self) -> "PolicyCreate":
+        if self.role.value not in DIAS_POR_ROL:
+            raise ValueError("Las políticas se aplican a estudiantes o docentes")
+        if self.duration_unit != TimeUnit.DAYS:
+            raise ValueError("La duración se indica en días corridos")
+        if self.max_duration > DIAS_POR_ROL[self.role.value]:
+            raise ValueError(
+                f"El máximo para {self.role.value.lower()} es {DIAS_POR_ROL[self.role.value]} días"
+            )
+        return self
 
 
 class PolicyOut(ORMModel):
@@ -199,15 +208,11 @@ class PolicyOut(ORMModel):
     max_units: int
     max_duration: int
     duration_unit: TimeUnit
-    allowed_modes: list[str]
-    requires_academic_eligibility: bool
-    allows_renewal: bool
-    max_renewals: int
-    late_grace_minutes: int
-    fine_per_day: Decimal
+    permitted: bool
     valid_from: datetime
     valid_until: datetime | None
     active: bool
+    status: str
 
 
 class ReservationCreate(BaseModel):
@@ -234,13 +239,13 @@ class ReservationOut(ORMModel):
 
 
 class LoanCreate(BaseModel):
-    applicant_id: Id
-    unit_id: Id
-    origin_reservation_id: Id | None = None
+    model_config = ConfigDict(extra="forbid")
+    origin_reservation_id: Id
     due_at: datetime
     use_mode: UseMode
     delivered_condition: str = Field(min_length=2, max_length=200)
     delivered_accessories: list[str] = Field(default_factory=list)
+    notes: str | None = Field(default=None, max_length=300)
 
 
 class RenewalCreate(BaseModel):
@@ -266,6 +271,14 @@ class LoanOut(ORMModel):
     state: LoanState
     returned_at: datetime | None
     returned_condition: str | None
+    unit_code: str
+    applicant_name: str
+    administrator_name: str
+    late_minutes: int
+    delivered_condition: str
+    delivered_accessories: list[str]
+    returned_accessories: list[str] | None
+    applied_policy: dict[str, Any]
 
 
 class RenewalOut(ORMModel):

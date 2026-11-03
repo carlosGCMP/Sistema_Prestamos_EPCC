@@ -63,6 +63,7 @@ def inicializar_base_datos(motor: Engine | None = None) -> Engine:
     # Los modelos deben registrarse antes de consultar Base.metadata.
     import app.infrastructure.models  # noqa: F401
     from app.infrastructure.catalogos import cargar_catalogos
+    from app.infrastructure.semillas_politicas import cargar_politicas_iniciales
 
     motor = motor if motor is not None else obtener_motor()
     with motor.begin() as conexion:
@@ -72,6 +73,7 @@ def inicializar_base_datos(motor: Engine | None = None) -> Engine:
         validar_esquema(conexion, Base.metadata)
         Base.metadata.create_all(bind=conexion)
         cargar_catalogos(conexion)
+        cargar_politicas_iniciales(conexion)
     return motor
 
 

@@ -77,9 +77,19 @@ no implican que todos esos módulos estén expuestos por HTTP.
   administrativo; no sustituye su rol personal. Los estudiantes no pueden recibirla.
 - Registrar una ficha crea también su `bien` y los nombres de sus características.
 - Registrar una unidad crea su primera entrada en `ubicacion_del_bien`.
-- La API operativa sigue siendo usuarios, inventario y reservas. La existencia de
-  tablas de préstamos, políticas, vinculación académica, garantías, incidencias y
-  sanciones **no significa que sus formularios estén implementados**.
+- La API y sus formularios incluyen usuarios, inventario, reservas, políticas,
+  préstamos y vinculación académica manual. Los módulos nuevos reutilizan las
+  tablas actuales sin añadir columnas ni migraciones.
+- Publicar una política guarda `politicas_del_prestamo`, `reglas_del_prestamo` y
+  `version_de_la_politica` en la misma transacción. Confirmar conserva la versión
+  aprobada en auditoría; entregar la copia también en el préstamo.
+- Entregar registra aprobación, préstamo, acta de entrega y bienes físicos, y marca
+  la reserva como atendida y la unidad como prestada. Devolver registra el acta,
+  cierra el préstamo y actualiza la unidad.
+- Los períodos, información académica y matrículas se registran manualmente; no
+  habilitan conexión institucional ni bloqueos académicos automáticos.
+- Garantías, incidencias, sanciones y prórrogas siguen fuera del alcance operativo.
+  Las siete reglas se explican en [políticas y guía de uso](13-politicas-y-guia-de-uso.md).
 
 ## Verlo en pgAdmin 4
 
@@ -100,14 +110,16 @@ WHERE contype = 'f'
 ORDER BY tabla, relacion;
 ```
 
-## Primera cuenta después de recrear
+## Primera cuenta en una instalación nueva
 
-Los datos anteriores no se copian. Crear un administrador con el entorno virtual activo:
+**No es necesario recrear la base para habilitar estos módulos.** Si ya tienes un
+administrador, utiliza esa cuenta. Solo en una instalación nueva, crea uno con el
+entorno virtual activo:
 
 ```bash
 python -m app.bootstrap_admin
 ```
 
 Después iniciar `uvicorn app.main:app --reload`. No existen claves predeterminadas.
-El respaldo de la base anterior se conserva fuera del repositorio; no debe
-publicarse porque puede contener datos personales y hashes de contraseñas.
+Los respaldos deben conservarse fuera del repositorio: pueden contener datos
+personales y hashes de contraseñas.

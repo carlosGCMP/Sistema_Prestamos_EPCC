@@ -1,25 +1,34 @@
 """Small application services for users, inventory, and reservations."""
 
-from datetime import UTC, datetime
-from typing import Any
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.application.comun import (
+    UseCaseError as UseCaseError,
+)
+from app.application.comun import (
+    ahora,
+)
+from app.application.comun import (
+    audit as audit,
+)
+from app.application.comun import (
+    instante_utc as _aware_utc,
+)
+from app.application.politicas import validar_reserva
 from app.application.schemas import ItemCreate, PersonCreate, UnitCreate
 from app.core.security import hash_password
 from app.infrastructure.modelos_sql import (
     CaracteristicaDelBien,
-    HistorialDeCambios,
     PersonalAdministrativo,
     RegistroDeReserva,
-    TipoDeEvento,
     UbicacionDelBien,
 )
 from app.infrastructure.models import (
     Account,
     Administrador,
-    AuditEvent,
     Bien,
     Category,
     ItemCard,
@@ -35,46 +44,6 @@ from app.infrastructure.models import (
     TeacherProfile,
     UnitState,
 )
-
-
-class UseCaseError(Exception):
-    def __init__(self, status_code: int, detail: str) -> None:
-        self.status_code = status_code
-        self.detail = detail
-        super().__init__(detail)
-
-
-def _aware_utc(value: datetime, field: str) -> datetime:
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise UseCaseError(422, f"{field} debe incluir zona horaria")
-    return value.astimezone(UTC)
-
-
-def audit(
-    session: Session,
-    actor: Person | None,
-    action: str,
-    entity_type: str,
-    entity_id: int | str,
-    details: dict[str, Any] | None = None,
-) -> None:
-    tipo = session.scalar(
-        select(TipoDeEvento).where(TipoDeEvento.nombre_tipo_evento == "OPERACION")
-    )
-    if tipo is None:
-        raise UseCaseError(500, "Falta inicializar el catálogo de auditoría")
-    evento = AuditEvent(
-        actor_id=actor.account.id if actor and actor.account else None,
-        event_type_id=tipo.id_tipo_evento,
-        actor_type="USUARIO" if actor else "PROCESO_AUTOMATICO",
-        action=action,
-        entity_type=entity_type,
-        entity_id=str(entity_id),
-        details=details or {},
-    )
-    session.add(evento)
-    session.flush()
-    session.add(HistorialDeCambios(id_registro=evento.id, descripcion=action))
 
 
 def create_person(session: Session, data: PersonCreate, actor: Person | None) -> Person:
@@ -156,6 +125,9 @@ def new_item_type(session: Session, name: str, lendable: bool, actor: Person) ->
     item_type = ItemType(name=name, lendable=lendable)
     session.add(item_type)
     session.flush()
+    from app.infrastructure.semillas_politicas import crear_predeterminadas
+
+    crear_predeterminadas(session, item_type.id)
     audit(session, actor, "TIPO_BIEN_CREADO", "TipoDeBien", item_type.id)
     return item_type
 
@@ -232,7 +204,7 @@ def create_reservation(
 ) -> Reservation:
     starts_at = _aware_utc(starts_at, "starts_at")
     ends_at = _aware_utc(ends_at, "ends_at")
-    if starts_at <= datetime.now(UTC) or ends_at <= starts_at:
+    if starts_at <= ahora() or ends_at <= starts_at:
         raise UseCaseError(422, "La reserva debe tener un intervalo futuro válido")
     if applicant.role not in (Role.STUDENT, Role.TEACHER):
         raise UseCaseError(403, "Solo estudiantes y docentes pueden solicitar reservas")
@@ -259,6 +231,8 @@ def create_reservation(
     ):
         raise UseCaseError(409, "La unidad no está disponible para reservar")
 
+    politica = validar_reserva(session, applicant, unit, starts_at, ends_at)
+
     reservation = Reservation(
         applicant_id=applicant.applicant.id,
         unit_id=unit.id,
@@ -268,7 +242,14 @@ def create_reservation(
     )
     session.add(reservation)
     session.flush()
-    audit(session, applicant, "RESERVA_SOLICITADA", "SolicitudDeReserva", reservation.id)
+    audit(
+        session,
+        applicant,
+        "RESERVA_SOLICITADA",
+        "SolicitudDeReserva",
+        reservation.id,
+        {"politica": politica},
+    )
     return reservation
 
 
@@ -315,6 +296,8 @@ def decide_reservation(
     applicant: Person | None = None
     unit: PhysicalUnit | None = None
     if confirm:
+        if administrator.applicant and administrator.applicant.id == existing.applicant_id:
+            raise UseCaseError(403, "Un administrador no puede confirmar su propia reserva")
         applicant = _active_person(session, existing.applicant_id)
         if applicant.account is None or not applicant.account.active:
             raise UseCaseError(409, "La persona solicitante no tiene cuenta activa")
@@ -337,8 +320,8 @@ def decide_reservation(
         assert unit is not None
         starts_at = _aware_utc(reservation.starts_at, "starts_at")
         ends_at = _aware_utc(reservation.ends_at, "ends_at")
-        if ends_at <= datetime.now(UTC):
-            raise UseCaseError(409, "La reserva ya venció")
+        if starts_at <= ahora():
+            raise UseCaseError(409, "La reserva debe confirmarse antes de su inicio")
         conflict = session.scalar(
             select(Reservation.id)
             .where(
@@ -362,6 +345,10 @@ def decide_reservation(
             or not item_type.lendable
         ):
             raise UseCaseError(409, "La unidad no está habilitada para reservas")
+        assert applicant is not None
+        politica = validar_reserva(
+            session, applicant, unit, starts_at, ends_at, reserva_excluida=reservation.id
+        )
         reservation.state = ReservationState.CONFIRMED
         session.add(
             RegistroDeReserva(
@@ -383,7 +370,7 @@ def decide_reservation(
         "RESERVA_CONFIRMADA" if confirm else "RESERVA_RECHAZADA",
         "SolicitudDeReserva",
         reservation.id,
-        {"reason": reason} if reason else {},
+        {"reason": reason, "politica": politica} if confirm else {"reason": reason},
     )
     return reservation
 
@@ -404,6 +391,11 @@ def cancel_reservation(
         raise UseCaseError(403, "Solo el titular o personal autorizado puede cancelar la reserva")
     if reservation.state not in (ReservationState.PENDING, ReservationState.CONFIRMED):
         raise UseCaseError(409, "La reserva ya no puede cancelarse")
+    if actor.is_admin:
+        if not reason or not reason.strip():
+            raise UseCaseError(422, "El administrador debe indicar el motivo de cancelación")
+    elif reservation.starts_at <= ahora():
+        raise UseCaseError(409, "El solicitante solo puede cancelar antes del inicio")
     reservation.state = ReservationState.CANCELLED
     reservation.decision_reason = reason
     registro = session.scalar(

@@ -14,7 +14,13 @@
 | `app/api/routes.py` | Entradas HTTP y respuestas. |
 | `app/core/security.py` | Autenticación y permisos. |
 | `app/application/basic_use_cases.py` | Reglas de usuarios, inventario y reservas. |
+| `app/application/politicas.py` | Las siete políticas y su publicación por versiones. |
+| `app/application/prestamos.py` | Entrega, devolución y seguimiento del préstamo. |
+| `app/application/academico.py` | Registro manual de períodos, información y matrículas. |
+| `app/application/comun.py` | Errores, fechas UTC, bloqueos y auditoría compartidos. |
+| `app/api/modulos.py` | Rutas HTTP de los tres módulos nuevos. |
 | `frontend/app.js` | Formularios, botones y peticiones desde el navegador. |
+| `frontend/modulos.js` | Pantallas de políticas, préstamos y vinculación académica. |
 
 ## Al iniciar
 
@@ -26,6 +32,7 @@ uvicorn app.main:app --reload
     → inicializar_base_datos() registra los modelos y valida el esquema
     → create_all() crea únicamente las tablas faltantes
     → cargar_catalogos() prepara los estados y tipos de evento necesarios
+    → cargar_politicas_iniciales() añade solo políticas que nunca existieron por rol/tipo
     → la aplicación comienza a atender peticiones
 ```
 
@@ -41,6 +48,7 @@ otra fábrica de conexiones.
 
 No se ejecuta Alembic ni se leen o corrigen automáticamente los archivos SQL.
 Los SQL originales y el historial de migraciones se conservan intactos.
+La carga inicial no reemplaza versiones publicadas ni reactiva políticas vencidas.
 
 ### Qué significa «crear tablas automáticamente»
 

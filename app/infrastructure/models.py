@@ -183,6 +183,10 @@ class Person(Base):
     def is_admin(self) -> bool:
         return self.account is not None and self.account.administrator is not None
 
+    @property
+    def applicant_id(self) -> int | None:
+        return self.applicant.id if self.applicant else None
+
 
 class Account(Base):
     __tablename__ = "cuenta"
