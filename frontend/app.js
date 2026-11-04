@@ -17,8 +17,13 @@ const stateNames = {
   CONFIRMADA: "Confirmada",
   RECHAZADA: "Rechazada",
   CANCELADA: "Cancelada",
+  ATENDIDA: "Atendida",
+  VENCIDA: "Vencida",
   ACTIVA: "Activa",
   INACTIVA: "Inactiva",
+  VENCIDO: "Vencido",
+  DEVUELTO: "Devuelto",
+  CERRADO_POR_PERDIDA: "Cerrado por pérdida",
 };
 const stateClasses = {
   DISPONIBLE: "available",
@@ -30,6 +35,11 @@ const stateClasses = {
   BAJA: "retired",
   RECHAZADA: "rejected",
   CANCELADA: "cancelled",
+  ATENDIDA: "returned",
+  VENCIDA: "overdue",
+  VENCIDO: "overdue",
+  DEVUELTO: "returned",
+  CERRADO_POR_PERDIDA: "lost",
 };
 
 const loginView = document.querySelector("#login-view");
@@ -262,7 +272,15 @@ async function loadInventory() {
     const category = categories.find((entry) => entry.id === item.category_id);
     return `${item.name} · ${category?.name || "categoría"}`;
   }, "Selecciona ficha sin unidad");
-  const availableUnits = units.filter((unit) => unit.state === "DISPONIBLE");
+  const availableUnits = units.filter((unit) => {
+    if (unit.state !== "DISPONIBLE") return false;
+    const item = items.find((entry) => entry.id === unit.item_card_id);
+    if (!item || item.active === false) return false;
+    const category = categories.find((entry) => entry.id === item.category_id);
+    if (!category || category.active === false) return false;
+    const type = types.find((entry) => entry.id === category.item_type_id);
+    return Boolean(type && type.active !== false && type.lendable !== false);
+  });
   fillSelect(document.querySelector('#reservation-form [name="unit_id"]'), availableUnits, (unit) => `${unit.inventory_code} · ${itemName(unit.item_card_id, items)}`, "Selecciona unidad");
 }
 
@@ -524,6 +542,12 @@ document.querySelector('#person-form [name="role"]').addEventListener("change", 
   configurar(".teacher-field", rol === "DOCENTE", ["teacher_code", "specialty"]);
   configurar(".staff-field", rol === "PERSONAL_ADMINISTRATIVO");
   configurar(".employee-field", rol !== "ESTUDIANTE", ["department", "position"]);
+  const posicion = document.querySelector('#person-form [name="position"]');
+  const cargoActual = posicion.value.trim();
+  if (rol === "DOCENTE" && (!cargoActual || cargoActual === "Personal EPCC")) posicion.value = "Docente";
+  if (rol === "PERSONAL_ADMINISTRATIVO" && (!cargoActual || cargoActual === "Docente")) posicion.value = "Personal EPCC";
+  const departamento = document.querySelector('#person-form [name="department"]');
+  if (!departamento.value.trim()) departamento.value = "EPCC";
   document.querySelectorAll(".admin-attribution-field").forEach((field) => {
     field.hidden = rol === "ESTUDIANTE";
     field.querySelector("input").disabled = rol === "ESTUDIANTE";
@@ -540,17 +564,16 @@ document.querySelector("#person-form").addEventListener("submit", (event) => {
   const selectedRole = form.elements.role.value;
   submitJsonForm(form, "/people", (data) => {
     const person = values(data);
-    person.cui = person.cui.trim() || null;
+    // Los campos de perfil deshabilitados no viajan en FormData.
+    person.cui = (person.cui ?? "").trim() || null;
     person.first_names = person.first_names.trim();
     person.last_names = person.last_names.trim();
     person.end_date = person.end_date || null;
     if (person.end_date && person.end_date <= person.start_date) throw new Error("La fecha de fin debe ser posterior a la fecha de inicio, o quedar vacía.");
     person.is_admin = selectedRole !== "ESTUDIANTE" && data.get("is_admin") === "on";
-    person.start_date = person.start_date || new Date().toISOString().slice(0, 10);
+    person.start_date = person.start_date || new Date().toLocaleDateString("sv-SE");
     person.semester = person.semester ? Number(person.semester) : null;
     for (const field of ["student_code", "program", "teacher_code", "specialty"]) person[field] ||= null;
-    if (selectedRole !== "ESTUDIANTE") { person.student_code = null; person.program = null; person.semester = null; }
-    if (selectedRole !== "DOCENTE") { person.teacher_code = null; person.specialty = null; }
     return person;
   }, "Usuario creado.", loadPeople);
 });

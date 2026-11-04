@@ -81,22 +81,22 @@
           <div class="forms-grid">
             <form id="type-form" class="compact-form">
               <h3>1. Tipo de bien</h3>
-              <label>Nombre<input name="name" required maxlength="100"></label>
+              <label>Nombre<input name="name" required minlength="2" maxlength="100"></label>
               <label class="checkbox-label"><input name="lendable" type="checkbox" checked> Se puede reservar</label>
               <button class="button secondary" type="submit">Crear tipo</button>
             </form>
             <form id="category-form" class="compact-form">
               <h3>2. Categoría</h3>
               <label>Tipo de bien<select name="item_type_id" required></select></label>
-              <label>Nombre<input name="name" required maxlength="100"></label>
-              <label>Descripción<input name="description" maxlength="500"></label>
+              <label>Nombre<input name="name" required minlength="2" maxlength="100"></label>
+              <label>Descripción<input name="description"></label>
               <button class="button secondary" type="submit">Crear categoría</button>
             </form>
             <form id="item-form" class="compact-form">
               <h3>3. Ficha de catálogo</h3>
-              <label>Nombre<input name="name" required maxlength="150"></label>
+              <label>Nombre<input name="name" required minlength="2" maxlength="150"></label>
               <label>Categoría<select name="category_id" required></select></label>
-              <label>Descripción<input name="description" maxlength="500"></label>
+              <label>Descripción<input name="description"></label>
               <label>Características (una por línea: nombre: valor)
                 <textarea name="caracteristicas" rows="3" placeholder="RAM: 8GB&#10;Procesador: i5"></textarea>
               </label>
@@ -105,11 +105,11 @@
             <form id="unit-form" class="compact-form">
               <h3>4. Unidad física</h3>
               <label>Ficha<select name="item_card_id" required></select></label>
-              <label>Código de inventario<input name="inventory_code" required maxlength="50"></label>
+              <label>Código de inventario<input name="inventory_code" required minlength="2" maxlength="50"></label>
               <label>Número de serie<input name="serial_number" required maxlength="100" placeholder="Si no tiene, escribe: Sin serie"></label>
               <label>Ubicación<input name="location" required maxlength="100"></label>
-              <label>Responsable de custodia<input name="custody" required maxlength="150"></label>
-              <label>Condición<input name="condition" required maxlength="100" placeholder="Bueno"></label>
+              <label>Responsable de custodia<input name="custody" required minlength="2" maxlength="150"></label>
+              <label>Condición<input name="condition" required minlength="2" maxlength="100" placeholder="Bueno"></label>
               <label>Fecha de adquisición<input name="acquisition_date" type="date"></label>
               <label>Accesorios (separados por coma)<input name="accessories" placeholder="Cargador, estuche"></label>
               <button class="button secondary" type="submit">Registrar unidad</button>
@@ -133,7 +133,7 @@
             <label>Unidad disponible<select name="unit_id" required></select></label>
             <label>Desde<input name="starts_at" type="datetime-local" required></label>
             <label>Hasta<input name="ends_at" type="datetime-local" required></label>
-            <label class="wide-field">Uso previsto<input name="intended_use" required maxlength="300"></label>
+            <label class="wide-field">Uso previsto<input name="intended_use" required minlength="3" maxlength="300"></label>
             <button class="button primary" type="submit">Enviar solicitud</button>
           </form>
         </section>
@@ -177,7 +177,7 @@
                 <option value="EN_SITIO">En sitio</option>
               </select>
             </label>
-            <label>Condición al entregar<input name="condicion_entrega" required maxlength="100" placeholder="Bueno"></label>
+            <label>Condición al entregar<input name="condicion_entrega" required minlength="2" maxlength="200" placeholder="Bueno"></label>
             <label class="wide-field">Accesorios entregados (separados por coma)<input name="accesorios_entregados" placeholder="Cargador, estuche"></label>
             <label class="wide-field">Observaciones<input name="notes" maxlength="300"></label>
             <button class="button primary" type="submit">Registrar préstamo</button>
@@ -214,10 +214,10 @@
           <div class="panel-heading"><div><h2>Registrar persona</h2><p>La atribución administrativa solo puede otorgarse a Docente o Personal administrativo.</p></div></div>
           <form id="person-form" class="forms-grid user-form">
             <label>Tipo de documento<select name="document_type" required><option>DNI</option><option>CE</option><option>PASAPORTE</option></select></label>
-            <label>Número de documento<input name="document_number" required maxlength="20"></label>
+            <label>Número de documento<input name="document_number" required minlength="2" maxlength="20"></label>
             <label>Nombres<input name="first_names" required maxlength="100"></label>
             <label>Apellidos<input name="last_names" required maxlength="100"></label>
-            <label>Correo institucional<input name="institutional_email" type="email" required maxlength="150"></label>
+            <label>Correo institucional<input name="institutional_email" type="email" required minlength="5" maxlength="150"></label>
             <label>Rol base<select name="role" required><option value="ESTUDIANTE">Estudiante</option><option value="DOCENTE">Docente</option><option value="PERSONAL_ADMINISTRATIVO">Personal administrativo</option></select></label>
             <label>Afiliación<input name="school_affiliation" required value="EPCC" maxlength="100"></label>
             <label>Fecha de inicio<input name="start_date" type="date" required></label>
@@ -225,7 +225,7 @@
             <label>Usuario<input name="username" required minlength="3" maxlength="50" autocomplete="off"></label>
             <label>Contraseña temporal<input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
 
-            <label class="student-field">CUI (Código Único UNSA)<input name="cui" maxlength="20" required></label>
+            <label class="student-field">CUI (Código Único UNSA)<input name="cui" minlength="4" maxlength="20" required></label>
             <label class="student-field">Código universitario<input name="student_code" maxlength="20" required></label>
             <label class="student-field">Programa académico<input name="program" maxlength="100" required></label>
             <label class="student-field">Semestre de avance
@@ -366,7 +366,7 @@
     <div class="modal-contenido">
       <h2 id="modal-motivo-titulo">Motivo</h2>
       <p id="modal-motivo-mensaje"></p>
-      <label>Motivo<textarea id="modal-motivo-texto" rows="4" maxlength="300" required></textarea></label>
+      <label>Motivo<textarea id="modal-motivo-texto" rows="4" maxlength="1000" required></textarea></label>
       <div class="modal-acciones">
         <button class="button quiet" type="button" data-action="cerrar-modal">Cancelar</button>
         <button class="button primary" type="button" data-action="aceptar-modal">Aceptar</button>
@@ -378,8 +378,8 @@
     <div class="modal-contenido">
       <h2>Registrar devolución</h2>
       <p>Completa el acta de devolución.</p>
-      <label>Condición al devolver<textarea id="modal-devolver-condicion" rows="2" maxlength="200" required></textarea></label>
-      <label>Accesorios recibidos<textarea id="modal-devolver-accesorios" rows="2" maxlength="300"></textarea></label>
+      <label>Condición al devolver<textarea id="modal-devolver-condicion" rows="2" minlength="2" maxlength="200" required></textarea></label>
+      <label>Accesorios recibidos<textarea id="modal-devolver-accesorios" rows="2"></textarea></label>
       <label>Destino de la unidad
         <select id="modal-devolver-destino" required>
           <option value="DISPONIBLE">Disponible</option>
