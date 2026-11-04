@@ -2,6 +2,7 @@
 
 ## Alcance vigente
 
+- [Bounded contexts y mapa de contexto](14-bounded-contexts.md)
 - [Políticas y guía de uso: alcance actual y siete reglas](13-politicas-y-guia-de-uso.md)
 - [Arquitectura y tecnologías](02-arquitectura-y-tecnologias.md)
 - [Conexión y flujo del aplicativo](11-conexion-y-flujo.md)
