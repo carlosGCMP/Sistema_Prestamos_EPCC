@@ -1,0 +1,22 @@
+# Instalación independiente para Classroom; no utiliza el volumen de la base real.
+name: epcc_classroom_demo
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: epcc_prestamos_demo
+      POSTGRES_USER: epcc_demo
+      POSTGRES_PASSWORD: epcc_demo
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - demo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U epcc_demo -d epcc_prestamos_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  demo_postgres_data:

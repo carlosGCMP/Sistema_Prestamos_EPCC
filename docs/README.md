@@ -2,6 +2,7 @@
 
 ## Alcance vigente
 
+- [Datos demo y entrega en ZIP para Classroom](datos-demo.md)
 - [Bounded contexts y mapa de contexto](14-bounded-contexts.md)
 - [Políticas y guía de uso: alcance actual y siete reglas](13-politicas-y-guia-de-uso.md)
 - [Arquitectura y tecnologías](02-arquitectura-y-tecnologias.md)

@@ -77,6 +77,16 @@ La interfaz web está en `http://127.0.0.1:8000/`. No requiere Node.js ni un pro
 
 Para detener la API, usa `Ctrl+C`. Para detener PostgreSQL conservando los datos, ejecuta `docker compose down` (no agregues `-v` salvo que quieras eliminar el volumen local).
 
+## Entrega con datos de demostración
+
+Para Classroom puedes usar la [guía de datos demo](docs/datos-demo.md), con pasos
+para Linux y Windows 11, cuentas de prueba y un recorrido de evaluación.
+`python -m app.cargar_demo` carga datos ficticios solo en una base vacía y únicamente
+en desarrollo; no se ejecuta automáticamente ni sobrescribe datos existentes.
+El archivo `docker-compose.demo.yml` permite una instalación separada en el puerto
+5434 y la guía sirve la interfaz en el 8001, sin cambiar tu `.env` ni el Compose normal.
+No ejecutes `bootstrap_admin` en esa instalación: el cargador ya crea el administrador.
+
 ## Estructura
 
 ```text
