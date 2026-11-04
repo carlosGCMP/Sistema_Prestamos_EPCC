@@ -8,7 +8,10 @@ Se adopta un monolito modular: una API y una base PostgreSQL. Las rutas HTTP se 
 Cliente HTTP ── JSON ── FastAPI
                           ├── Usuarios
                           ├── Catálogo e inventario
-                          └── Reservas
+                          ├── Reservas
+                          ├── Políticas de préstamo
+                          ├── Préstamos
+                          └── Vinculación académica
                                │
                          Casos de uso
                                │
@@ -26,7 +29,7 @@ Cliente HTTP ── JSON ── FastAPI
 | Validación | Pydantic | Validar datos de entrada y salida en los límites de la API. |
 | Persistencia | SQLAlchemy 2.x | Modelos ORM, consultas y transacciones. |
 | Base de datos | PostgreSQL 16 | Persistencia relacional e integridad referencial. |
-| Migraciones | Alembic | Evolución versionada del esquema. |
+| Migraciones | Alembic | Histórico: el arranque valida y crea tablas sin ejecutar Alembic. |
 | Autenticación | JWT y Argon2 | Sesiones de API y almacenamiento seguro de contraseñas. |
 | Calidad | Ruff y mypy | Formato, análisis estático y verificación de tipos. |
 | Entorno local | Docker Compose | Servicio reproducible de PostgreSQL. |
@@ -55,4 +58,4 @@ Las capas internas no deben depender de FastAPI. Las rutas delegan reglas a caso
 - Al confirmar una reserva, bloquear la unidad y volver a comprobar estado y solapamientos en la misma transacción.
 - La auditoría de la operación se confirma junto con el cambio principal.
 
-El ORM y el esquema heredado aún contienen entidades de módulos futuros. No se presentan como funcionalidad activa: las rutas de esta etapa se limitan a usuarios, catálogo/inventario y reservas.
+El ORM y el esquema heredado aún contienen entidades de módulos futuros (garantías, incidencias, sanciones, prórrogas). No se presentan como funcionalidad activa: las rutas actuales abarcan usuarios, catálogo/inventario, reservas, políticas, préstamos y vinculación académica manual.

@@ -560,49 +560,6 @@ textarea { resize: vertical; min-height: 92px; padding: 12px; line-height: 1.55;
 .user-form { align-items: end; }
 .user-form .button { justify-self: start; }
 
-/*FILTROS*/
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 20px;
-  padding: 14px 16px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-}
-.filters-select {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  font-weight: 650;
-  color: var(--ink-soft);
-}
-.filters-select select {
-  min-height: 36px;
-  font-size: 0.84rem;
-  min-width: 190px;
-  padding: 6px 10px;
-}
-
-/*FIELDSET (políticas)*/
-.fieldset {
-  margin: 0;
-  padding: 16px 20px 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface-soft);
-}
-.fieldset legend {
-  padding: 0 8px;
-  color: var(--green-dark);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 /* MODALES */
 .modal {
   position: fixed;
@@ -765,7 +722,6 @@ textarea { resize: vertical; min-height: 92px; padding: 12px; line-height: 1.55;
   .wide-field { grid-column: auto; }
   .login-card { padding: 32px 24px; }
   th, td { padding-inline: 10px; font-size: 0.82rem; }
-  .fieldset { padding: 12px 14px; }
   .modal-contenido { padding: 22px 18px; }
   .modal-ancho { width: 100%; }
   .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }

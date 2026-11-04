@@ -107,7 +107,7 @@ export function crearModulos({ request, showToast, submitJsonForm, fillSelect,
     const prestamos = await request("/loans");
     const cuerpo = document.querySelector("#loans-table");
     cuerpo.replaceChildren();
-    const nombres = { ACTIVO: "En préstamo", VENCIDO: "Vencido", DEVUELTO: "Devuelto" };
+    const nombres = { ACTIVO: "En préstamo", VENCIDO: "Vencido", DEVUELTO: "Devuelto", CERRADO_POR_PERDIDA: "Cerrado por pérdida" };
     for (const prestamo of prestamos) {
       const valores = [prestamo.unit_code];
       if (isAdmin()) valores.push(prestamo.applicant_name, prestamo.administrator_name, prestamo.origin_reservation_id);

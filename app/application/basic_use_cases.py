@@ -206,32 +206,13 @@ def create_reservation(
     ends_at = _aware_utc(ends_at, "ends_at")
     if starts_at <= ahora() or ends_at <= starts_at:
         raise UseCaseError(422, "La reserva debe tener un intervalo futuro válido")
-    if applicant.role not in (Role.STUDENT, Role.TEACHER):
-        raise UseCaseError(403, "Solo estudiantes y docentes pueden solicitar reservas")
-    if (
-        applicant.state != PersonState.ACTIVE
-        or applicant.account is None
-        or not applicant.account.active
-        or applicant.applicant is None
-    ):
-        raise UseCaseError(409, "Se requiere una cuenta de usuario activa")
-
     unit = session.get(PhysicalUnit, unit_id)
     if unit is None:
         raise UseCaseError(404, "Unidad física no encontrada")
-    item = session.get(ItemCard, unit.item_card_id)
-    item_type = session.get(ItemType, item.item_type_id) if item is not None else None
-    if (
-        unit.state != UnitState.AVAILABLE
-        or item is None
-        or not item.active
-        or item_type is None
-        or not item_type.active
-        or not item_type.lendable
-    ):
-        raise UseCaseError(409, "La unidad no está disponible para reservar")
-
+    # Rol, cuenta, disponibilidad, cruces, cupo y política: validar_reserva los
+    # comprueba en un solo lugar (app/application/politicas.py).
     politica = validar_reserva(session, applicant, unit, starts_at, ends_at)
+    assert applicant.applicant is not None  # Garantizado por validar_acceso.
 
     reservation = Reservation(
         applicant_id=applicant.applicant.id,
@@ -322,30 +303,9 @@ def decide_reservation(
         ends_at = _aware_utc(reservation.ends_at, "ends_at")
         if starts_at <= ahora():
             raise UseCaseError(409, "La reserva debe confirmarse antes de su inicio")
-        conflict = session.scalar(
-            select(Reservation.id)
-            .where(
-                Reservation.unit_id == unit.id,
-                Reservation.id != reservation.id,
-                Reservation.state == ReservationState.CONFIRMED,
-                Reservation.starts_at < ends_at,
-                Reservation.ends_at > starts_at,
-            )
-            .limit(1)
-        )
-        if conflict is not None:
-            raise UseCaseError(409, "La unidad ya tiene una reserva confirmada en ese intervalo")
-        item = session.get(ItemCard, unit.item_card_id)
-        item_type = session.get(ItemType, item.item_type_id) if item is not None else None
-        if (
-            item is None
-            or not item.active
-            or item_type is None
-            or not item_type.active
-            or not item_type.lendable
-        ):
-            raise UseCaseError(409, "La unidad no está habilitada para reservas")
         assert applicant is not None
+        # Cruces, disponibilidad, cupo y política: validar_reserva los comprueba
+        # en un solo lugar (app/application/politicas.py).
         politica = validar_reserva(
             session, applicant, unit, starts_at, ends_at, reserva_excluida=reservation.id
         )
