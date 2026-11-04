@@ -43,10 +43,15 @@ export function crearModulos({ request, showToast, submitJsonForm, fillSelect,
   function actualizarReservas(filas) {
     reservas = filas;
     const momento = Date.now();
+    const catalogo = getCatalogo();
     const vigentes = filas.filter((reserva) => reserva.state === "CONFIRMADA" &&
       new Date(reserva.starts_at).getTime() <= momento && momento < new Date(reserva.ends_at).getTime());
     fillSelect(document.querySelector('#loan-form [name="reservation_id"]'), vigentes,
-      (reserva) => `Reserva ${reserva.id} · unidad ${reserva.unit_id} · vence ${dateLabel(reserva.ends_at)}`,
+      (reserva) => {
+        const unidad = catalogo.units.find((item) => item.id === reserva.unit_id);
+        const ficha = catalogo.items.find((item) => item.id === unidad?.item_card_id);
+        return `Reserva ${reserva.id} · ${unidad?.inventory_code || `unidad ${reserva.unit_id}`} · ${ficha?.name || "bien"} · vence ${dateLabel(reserva.ends_at)}`;
+      },
       "Selecciona una reserva confirmada en horario vigente");
   }
 
@@ -222,6 +227,10 @@ export function crearModulos({ request, showToast, submitJsonForm, fillSelect,
     }
     fillSelect(formularioMatricula.elements.id_semestre, periodos.map((periodo) => ({ ...periodo, id: periodo.id_semestre })),
       (periodo) => periodo.nombre_semestre, "Selecciona período");
+    fillSelect(formularioRegistro.elements.periodo, periodos.map((periodo) => ({
+      ...periodo, id: periodo.nombre_semestre,
+    })), (periodo) => `${periodo.nombre_semestre} · ${periodo.fecha_inicio} – ${periodo.fecha_fin}`,
+    "Selecciona período registrado");
     const tablaPeriodos = document.querySelector("#academic-periods-table");
     const tablaRegistros = document.querySelector("#academic-records-table");
     const tablaMatriculas = document.querySelector("#academic-matriculas-table");

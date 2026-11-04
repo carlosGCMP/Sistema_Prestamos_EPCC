@@ -55,7 +55,8 @@ class PersonCreate(BaseModel):
     password: str = Field(min_length=12, max_length=128)
     student_code: str | None = Field(default=None, min_length=1, max_length=20)
     program: str | None = Field(default=None, min_length=1, max_length=100)
-    semester: int | None = Field(default=None, ge=1, le=20)
+    # La malla de Ciencia de la Computación de la EPCC comprende diez semestres.
+    semester: int | None = Field(default=None, ge=1, le=10)
     teacher_code: str | None = Field(default=None, min_length=1, max_length=20)
     specialty: str | None = Field(default=None, min_length=1, max_length=120)
     staff_code: str | None = Field(default=None, max_length=20)
@@ -246,10 +247,6 @@ class LoanCreate(BaseModel):
     delivered_condition: str = Field(min_length=2, max_length=200)
     delivered_accessories: list[str] = Field(default_factory=list)
     notes: str | None = Field(default=None, max_length=300)
-
-
-class RenewalCreate(BaseModel):
-    new_due_at: datetime
 
 
 class ReturnCreate(BaseModel):

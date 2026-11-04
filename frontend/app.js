@@ -253,9 +253,15 @@ async function loadInventory() {
   inventoryCache = { categories, types, items, units };
   renderUnits(units, items, types);
   fillSelect(document.querySelector('#category-form [name="item_type_id"]'), types, (item) => item.name, "Selecciona tipo");
-  fillSelect(document.querySelector('#item-form [name="category_id"]'), categories, (item) => item.name, "Selecciona categoría");
+  fillSelect(document.querySelector('#item-form [name="category_id"]'), categories, (category) => {
+    const type = types.find((item) => item.id === category.item_type_id);
+    return `${category.name} · ${type?.name || "tipo"}`;
+  }, "Selecciona categoría");
   const freeCards = items.filter((item) => !units.some((unit) => unit.item_card_id === item.id));
-  fillSelect(document.querySelector('#unit-form [name="item_card_id"]'), freeCards, (item) => item.name, "Selecciona ficha sin unidad");
+  fillSelect(document.querySelector('#unit-form [name="item_card_id"]'), freeCards, (item) => {
+    const category = categories.find((entry) => entry.id === item.category_id);
+    return `${item.name} · ${category?.name || "categoría"}`;
+  }, "Selecciona ficha sin unidad");
   const availableUnits = units.filter((unit) => unit.state === "DISPONIBLE");
   fillSelect(document.querySelector('#reservation-form [name="unit_id"]'), availableUnits, (unit) => `${unit.inventory_code} · ${itemName(unit.item_card_id, items)}`, "Selecciona unidad");
 }
@@ -504,13 +510,30 @@ document.querySelector("#unit-form").addEventListener("submit", (event) => {
 });
 
 document.querySelector('#person-form [name="role"]').addEventListener("change", (event) => {
-  document.querySelectorAll(".student-field").forEach((field) => { field.hidden = event.target.value !== "ESTUDIANTE"; });
-  document.querySelectorAll(".teacher-field").forEach((field) => { field.hidden = event.target.value !== "DOCENTE"; });
-  document.querySelectorAll(".staff-field").forEach((field) => { field.hidden = event.target.value !== "PERSONAL_ADMINISTRATIVO"; });
-  document.querySelectorAll(".admin-attribution-field").forEach((field) => { field.hidden = event.target.value === "ESTUDIANTE"; });
+  const rol = event.target.value;
+  const configurar = (selector, visible, requeridos = []) => {
+    document.querySelectorAll(selector).forEach((field) => {
+      field.hidden = !visible;
+      const control = field.querySelector("input, select");
+      if (!control) return;
+      control.disabled = !visible;
+      control.required = visible && requeridos.includes(control.name);
+    });
+  };
+  configurar(".student-field", rol === "ESTUDIANTE", ["cui", "student_code", "program", "semester"]);
+  configurar(".teacher-field", rol === "DOCENTE", ["teacher_code", "specialty"]);
+  configurar(".staff-field", rol === "PERSONAL_ADMINISTRATIVO");
+  configurar(".employee-field", rol !== "ESTUDIANTE", ["department", "position"]);
+  document.querySelectorAll(".admin-attribution-field").forEach((field) => {
+    field.hidden = rol === "ESTUDIANTE";
+    field.querySelector("input").disabled = rol === "ESTUDIANTE";
+  });
   if (event.target.value === "ESTUDIANTE") document.querySelector('[name="is_admin"]').checked = false;
 });
 document.querySelector('#person-form [name="role"]').dispatchEvent(new Event("change"));
+document.querySelector("#person-form").addEventListener("reset", () => {
+  queueMicrotask(() => document.querySelector('#person-form [name="role"]').dispatchEvent(new Event("change")));
+});
 document.querySelector("#person-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;

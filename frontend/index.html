@@ -106,7 +106,7 @@
               <h3>4. Unidad física</h3>
               <label>Ficha<select name="item_card_id" required></select></label>
               <label>Código de inventario<input name="inventory_code" required maxlength="50"></label>
-              <label>Número de serie<input name="serial_number" required maxlength="100"></label>
+              <label>Número de serie<input name="serial_number" required maxlength="100" placeholder="Si no tiene, escribe: Sin serie"></label>
               <label>Ubicación<input name="location" required maxlength="100"></label>
               <label>Responsable de custodia<input name="custody" required maxlength="150"></label>
               <label>Condición<input name="condition" required maxlength="100" placeholder="Bueno"></label>
@@ -125,7 +125,7 @@
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
         <p class="muted">Las reservas se solicitan para una unidad y un intervalo de tiempo.</p>
-        <p id="reservation-policy" class="muted">Máximo 2 bienes del mismo tipo: 3 días para estudiantes y 7 para docentes.</p>
+        <p id="reservation-policy" class="muted">La política depende de tu rol y del tipo de bien. Límites máximos: 2 unidades del mismo tipo; hasta 3 días para estudiantes y 7 para docentes.</p>
 
         <section class="panel requester-only" id="reservation-create-panel">
           <div class="panel-heading"><div><h2>Solicitar una reserva</h2><p>Solo para estudiantes y docentes con cuenta activa.</p></div></div>
@@ -225,17 +225,26 @@
             <label>Usuario<input name="username" required minlength="3" maxlength="50" autocomplete="off"></label>
             <label>Contraseña temporal<input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
 
-            <label class="student-field">CUI (Código Único UNSA)<input name="cui" maxlength="20"></label>
-            <label class="student-field">Código universitario<input name="student_code" maxlength="20"></label>
-            <label class="student-field">Programa<input name="program" maxlength="100"></label>
-            <label class="student-field">Semestre<input name="semester" type="number" min="1" max="20"></label>
+            <label class="student-field">CUI (Código Único UNSA)<input name="cui" maxlength="20" required></label>
+            <label class="student-field">Código universitario<input name="student_code" maxlength="20" required></label>
+            <label class="student-field">Programa académico<input name="program" maxlength="100" required></label>
+            <label class="student-field">Semestre de avance
+              <select name="semester" required>
+                <option value="">Selecciona el semestre (1–10)</option>
+                <option value="1">1.er semestre</option><option value="2">2.º semestre</option>
+                <option value="3">3.er semestre</option><option value="4">4.º semestre</option>
+                <option value="5">5.º semestre</option><option value="6">6.º semestre</option>
+                <option value="7">7.º semestre</option><option value="8">8.º semestre</option>
+                <option value="9">9.º semestre</option><option value="10">10.º semestre</option>
+              </select>
+            </label>
 
-            <label class="teacher-field">Código docente<input name="teacher_code" maxlength="20"></label>
-            <label class="teacher-field">Especialidad<input name="specialty" maxlength="120"></label>
+            <label class="teacher-field">Código docente<input name="teacher_code" maxlength="20" required></label>
+            <label class="teacher-field">Especialidad<input name="specialty" maxlength="120" required></label>
 
             <label class="staff-field" hidden>Código de personal<input name="staff_code" maxlength="20"></label>
-            <label>Departamento<input name="department" value="EPCC" required maxlength="100"></label>
-            <label>Cargo<input name="position" value="Personal EPCC" required maxlength="100"></label>
+            <label class="employee-field">Departamento<input name="department" value="EPCC" required maxlength="100"></label>
+            <label class="employee-field">Cargo<input name="position" value="Personal EPCC" required maxlength="100"></label>
 
             <label class="admin-attribution-field checkbox-label" hidden><input name="is_admin" type="checkbox"> Otorgar atribución administrativa</label>
 
@@ -276,9 +285,10 @@
         </section>
         <section class="panel">
           <h2>Información del estudiante</h2>
+          <p class="muted">Este resumen se actualiza por estudiante; al guardarlo de nuevo se reemplaza la información anterior.</p>
           <form id="academic-record-form" class="forms-grid">
             <label>Estudiante<select name="persona_id" required></select></label>
-            <label>Período de la información<input name="periodo" required minlength="2" maxlength="30" placeholder="2026-II"></label>
+            <label>Período de la información<select name="periodo" required></select></label>
             <label>Situación<select name="situacion" required><option>MATRICULADO</option><option>NO_MATRICULADO</option><option>EGRESADO</option><option>GRADUADO</option><option>RETIRADO</option><option>SUSPENDIDO</option></select></label>
             <label>Promedio acumulado<input name="promedio_acumulado" type="number" min="0" max="99.99" step="0.01" value="0" required></label>
             <label>Créditos aprobados<input name="creditos_aprobados" type="number" min="0" value="0" required></label>
@@ -307,14 +317,14 @@
           <div><p class="eyebrow">POLÍTICAS DE PRÉSTAMO</p><h1>Políticas</h1></div>
           <button class="button secondary refresh-button" type="button">Actualizar</button>
         </div>
-        <p class="muted">Máximo 2 bienes del mismo tipo. Estudiantes: 3 días corridos; docentes: 7. Una versión nueva no cambia las reservas ya confirmadas.</p>
+        <p class="muted">Las reglas dependen del rol y del tipo de bien. Límites máximos: 2 unidades del mismo tipo; hasta 3 días corridos para estudiantes y 7 para docentes. Una versión nueva no cambia las reservas ya confirmadas.</p>
         <section class="panel admin-only" hidden>
           <h2>Publicar una versión</h2><p>Se conserva el historial. Los campos de inicio y fin de vigencia son opcionales.</p>
           <form id="policy-form" class="forms-grid">
             <label>Nombre<input name="name" required minlength="2" maxlength="120" placeholder="Préstamo de laptops"></label>
             <label>Tipo de bien<select name="item_type_id" required></select></label>
             <label>Rol<select name="role" required><option value="ESTUDIANTE">Estudiante</option><option value="DOCENTE">Docente</option></select></label>
-            <label>Máximo simultáneo<input name="max_units" type="number" min="1" max="2" value="2" required></label>
+            <label>Unidades simultáneas (máximo 2)<input name="max_units" type="number" min="1" max="2" value="2" required></label>
             <label>Duración en días corridos<input name="max_duration" type="number" min="1" max="3" value="3" required></label>
             <label class="checkbox-label"><input name="permitted" type="checkbox" checked> Permitir reservas</label>
             <label>Inicio de vigencia (vacío: ahora)<input name="valid_from" type="datetime-local"></label>
@@ -360,18 +370,6 @@
       <div class="modal-acciones">
         <button class="button quiet" type="button" data-action="cerrar-modal">Cancelar</button>
         <button class="button primary" type="button" data-action="aceptar-modal">Aceptar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="modal-renovar" class="modal" role="dialog" aria-modal="true" hidden>
-    <div class="modal-contenido">
-      <h2>Renovar préstamo</h2>
-      <p>Indica la nueva fecha de vencimiento.</p>
-      <label>Nueva fecha<input id="modal-renovar-fecha" type="datetime-local" required></label>
-      <div class="modal-acciones">
-        <button class="button quiet" type="button" data-action="cerrar-modal">Cancelar</button>
-        <button class="button primary" type="button" data-action="aceptar-modal">Renovar</button>
       </div>
     </div>
   </div>

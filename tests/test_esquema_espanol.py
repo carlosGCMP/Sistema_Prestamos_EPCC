@@ -1,6 +1,7 @@
 """El esquema completo debe respetar los nombres y relaciones de los SQL protegidos."""
 
 import re
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -8,7 +9,7 @@ from sqlalchemy import BigInteger, create_engine, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.application.schemas import PersonOut
+from app.application.schemas import PersonCreate, PersonOut
 from app.infrastructure.database import Base, inicializar_base_datos
 from app.infrastructure.modelos_sql import EstadoDeLaReserva
 from app.infrastructure.models import Category, PersonState, Role
@@ -45,6 +46,27 @@ def test_identificadores_no_pierden_precision_en_json() -> None:
         is_admin=False,
     )
     assert salida.model_dump(mode="json")["id"] == "9223372036854775807"
+
+
+def test_semestre_de_estudiante_respeta_malla_de_diez_semestres() -> None:
+    datos = {
+        "cui": "2026123456",
+        "document_type": "DNI",
+        "document_number": "87654321",
+        "first_names": "Estudiante",
+        "last_names": "EPCC",
+        "institutional_email": "estudiante@example.test",
+        "role": "ESTUDIANTE",
+        "school_affiliation": "EPCC",
+        "start_date": date(2026, 1, 1),
+        "username": "estudiante",
+        "password": "clave-segura-de-prueba",
+        "student_code": "20261234",
+        "program": "Ciencia de la Computación",
+    }
+    assert PersonCreate(**datos, semester=10).semester == 10
+    with pytest.raises(ValueError):
+        PersonCreate(**datos, semester=11)
 
 
 def test_claves_foraneas_rechazan_categorias_huerfanas(
