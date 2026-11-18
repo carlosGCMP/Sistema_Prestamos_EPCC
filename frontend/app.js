@@ -618,7 +618,7 @@ async function verificarConexion() {
 
 const modulos = crearModulos({ request, showToast, submitJsonForm, fillSelect, makeCell,
   dateLabel, isAdmin, getCatalogo: () => inventoryCache, refrescar: loadDashboard });
-const reportes = crearReportes({ request, showToast, isAdmin, makeCell, refrescar: loadDashboard });
+const reportes = crearReportes({ request, isAdmin });
 verificarConexion();
 window.setInterval(verificarConexion, 15000);
 window.addEventListener("offline", () => estadoConexion(false));

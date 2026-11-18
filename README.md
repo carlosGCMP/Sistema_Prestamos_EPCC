@@ -4,11 +4,15 @@ Sistema de préstamos de bienes de la EPCC con interfaz web y API en Python.
 
 ## Estado actual
 
-Están habilitados usuarios, catálogo/inventario, reservas, **políticas, préstamos y vinculación académica**. La interfaz utiliza HTML, CSS y JavaScript nativo y consume la API desde el mismo servidor.
+Están habilitados usuarios, catálogo/inventario, reservas, **políticas, préstamos, vinculación académica y reportes**. La interfaz utiliza HTML, CSS y JavaScript nativo y consume la API desde el mismo servidor.
 
 El recorrido es **solicitar reserva → confirmar → entregar → devolver**. Se aplican siete políticas: cuentas activas, bienes disponibles, máximo inicial de **2 bienes simultáneos por persona y tipo**, duración de **3 días corridos para estudiantes y 7 para docentes**, sin cruces, aprobación administrativa sin autoconfirmación y cancelación controlada. Las políticas se publican por versiones; las reservas confirmadas y los préstamos conservan las condiciones aprobadas.
 
 La vinculación académica permite registrar manualmente períodos, información académica y matrículas. No incluye consulta institucional automática, bloqueos académicos, multas, garantías, incidentes, sanciones, renovaciones ni prórrogas. Consulta la explicación sencilla en [políticas y guía de uso](docs/13-politicas-y-guia-de-uso.md).
+
+Reportes es una consulta administrativa con tarjetas de totales y estados por
+módulo. No importa archivos CSV ni modifica datos. Su estructura y un guion para
+explicarlo están en [reportes y exposición](docs/15-reportes-y-exposicion.md).
 
 El esquema físico utiliza las 43 tablas de los SQL originales, más `bien` y `prestamo`, con nombres y columnas en español e identificadores BIGINT. Los módulos nuevos reutilizan esas 45 tablas sin cambiar columnas. El arranque valida las tablas existentes, crea solo las faltantes y carga catálogos y políticas iniciales sin ejecutar migraciones ni borrar datos. Si ya existe una versión para un rol y tipo, no la reemplaza. Los SQL originales, la conexión protegida y las migraciones históricas se conservan intactos. Consulta las relaciones en [esquema en español](docs/12-esquema-espanol.md).
 
@@ -120,7 +124,7 @@ ruff format --check app tests
 mypy app
 ```
 
-La suite utiliza SQLite aislado, sin acceder a PostgreSQL local. Comprueba las 45 tablas y sus claves foráneas, BIGINT, arranque, transacciones, permisos, inventario, reservas, versiones de políticas, entregas, devoluciones y registros académicos. No exige instalar herramientas de navegador ni Node.js.
+La suite utiliza SQLite aislado, sin acceder a PostgreSQL local. Comprueba las 45 tablas y sus claves foráneas, BIGINT, arranque, transacciones, permisos, inventario, reservas, versiones de políticas, entregas, devoluciones, registros académicos y reportes de solo lectura. No exige instalar herramientas de navegador ni Node.js.
 
 ## Documentación
 

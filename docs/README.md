@@ -2,6 +2,7 @@
 
 ## Alcance vigente
 
+- [Reportes: funcionamiento y guía para exposición](15-reportes-y-exposicion.md)
 - [Datos demo y entrega en ZIP para Classroom](datos-demo.md)
 - [Bounded contexts y mapa de contexto](14-bounded-contexts.md)
 - [Políticas y guía de uso: alcance actual y siete reglas](13-politicas-y-guia-de-uso.md)
@@ -10,8 +11,8 @@
 - [Esquema de datos en español y relaciones](12-esquema-espanol.md)
 - Frontend: `../frontend/` (HTML, CSS y JavaScript nativo, sin compilación)
 
-Están habilitados usuarios, inventario, reservas, políticas, préstamos y registro
-académico manual. Los límites iniciales son 2 bienes por persona/tipo y 3 días
+Están habilitados usuarios, inventario, reservas, políticas, préstamos, reportes y
+registro académico manual. Los límites iniciales son 2 bienes por persona/tipo y 3 días
 corridos para estudiantes o 7 para docentes. No hace falta recrear la base.
 
 ## Referencias históricas

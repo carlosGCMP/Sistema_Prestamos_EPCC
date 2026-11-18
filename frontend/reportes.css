@@ -1,0 +1,200 @@
+/* Estilos exclusivos de Reportes. Reutilizan los colores del sistema. */
+.reports-heading {
+  align-items: center;
+}
+
+.reports-heading .muted {
+  margin: 12px 0 0;
+}
+
+.reports-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 28px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.reports-toolbar p {
+  margin: 0;
+}
+
+.reports-tag {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-weight: 700;
+}
+
+.reports-section {
+  margin-top: 28px;
+}
+
+.reports-section > h2 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+}
+
+.reports-section > .muted {
+  margin: -6px 0 18px;
+}
+
+/* Grid coloca las tarjetas en columnas sin depender de JavaScript. */
+.reports-totals,
+.reports-states {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.reports-card,
+.reports-panel {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.reports-card {
+  padding: 20px 24px;
+  border-top: 3px solid var(--green);
+}
+
+.reports-card dt {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.reports-card dd {
+  margin: 8px 0 0;
+  color: var(--green-dark);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-panel header {
+  padding: 18px 20px;
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.reports-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.reports-panel header p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.reports-list {
+  margin: 0;
+  padding: 6px 20px;
+  list-style: none;
+}
+
+.reports-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.reports-list li:last-child {
+  border-bottom: 0;
+}
+
+.reports-list strong {
+  min-width: 30px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.reports-state::before {
+  content: "";
+  flex: 0 0 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted-soft);
+}
+
+.reports-state[data-estado="DISPONIBLE"]::before,
+.reports-state[data-estado="CONFIRMADA"]::before,
+.reports-state[data-estado="ACTIVO"]::before {
+  background: var(--green);
+}
+
+.reports-state[data-estado="PENDIENTE"]::before,
+.reports-state[data-estado="MANTENIMIENTO"]::before {
+  background: var(--orange);
+}
+
+.reports-state[data-estado="VENCIDO"],
+.reports-state[data-estado="VENCIDA"] {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.reports-state[data-estado="VENCIDO"]::before,
+.reports-state[data-estado="VENCIDA"]::before {
+  background: var(--red);
+}
+
+.reports-note,
+.reports-error {
+  margin: 24px 0 0;
+  padding: 14px 18px;
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-sm);
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 0.82rem;
+}
+
+.reports-error {
+  border-color: var(--red);
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.reports-empty {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 1100px) {
+  .reports-states { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .reports-heading { align-items: stretch; }
+  .reports-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reports-card { padding: 16px; }
+}
+
+@media (max-width: 380px) {
+  .reports-totals { grid-template-columns: 1fr; }
+}

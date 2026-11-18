@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#163b35">
   <title>Sistema de Préstamos EPCC</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/reportes.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -56,27 +57,48 @@
 
 <!-- REPORTES -->
       <section id="reports-view" class="page-view admin-only" hidden>
-        <div class="page-heading"><div><p class="eyebrow">REPORTES</p><h1>Resumen general</h1></div>
-          <button id="reports-refresh" class="button secondary" type="button">Actualizar reportes</button></div>
-        <p class="muted">Totales actuales de toda la base de datos. Los préstamos vencidos continúan abiertos.</p>
-        <p id="reports-date" class="muted" role="status"></p>
-        <section class="panel"><h2>Indicadores</h2><dl id="reports-totals"></dl></section>
-        <section class="panel"><h2>Distribución por estado</h2>
-          <table><thead><tr><th>Módulo</th><th>Estado</th><th>Cantidad</th></tr></thead><tbody id="reports-states"></tbody></table>
+        <div class="page-heading reports-heading">
+          <div>
+            <p class="eyebrow">REPORTES · VISTA ADMINISTRATIVA</p>
+            <h1>Resumen general</h1>
+            <p class="muted">Una mirada al inventario, las reservas y los préstamos.</p>
+          </div>
+          <button id="reports-refresh" class="button primary" type="button">Actualizar reportes</button>
+        </div>
+        <div class="reports-toolbar">
+          <span class="reports-tag">Solo consulta</span>
+          <p id="reports-date" role="status">Los datos se consultan al abrir esta sección.</p>
+        </div>
+        <p id="reports-error" class="reports-error" role="alert" hidden></p>
+
+        <section class="reports-section" aria-labelledby="reports-totals-title">
+          <h2 id="reports-totals-title">Vista general</h2>
+          <dl class="reports-totals">
+            <div class="reports-card"><dt>Personas registradas</dt><dd data-report-total="personas">—</dd></div>
+            <div class="reports-card"><dt>Tipos de bien</dt><dd data-report-total="tipos">—</dd></div>
+            <div class="reports-card"><dt>Categorías</dt><dd data-report-total="categorias">—</dd></div>
+            <div class="reports-card"><dt>Unidades físicas</dt><dd data-report-total="unidades">—</dd></div>
+            <div class="reports-card"><dt>Reservas</dt><dd data-report-total="reservas">—</dd></div>
+            <div class="reports-card"><dt>Préstamos</dt><dd data-report-total="prestamos">—</dd></div>
+          </dl>
         </section>
-        <section class="panel"><h2>Importar catálogo CSV</h2>
-          <p>Registra tipos y categorías. Los tipos nuevos se crean prestables con sus políticas iniciales.
-          Si el tipo ya existe, se reutiliza. Una categoría duplicada impide importar el archivo completo.</p>
-          <p>Archivo UTF-8 separado por comas. Máximo 100 KB y 200 filas. Cabecera exacta: <code>tipo,categoria,descripcion</code>.</p>
-          <button id="reports-template" class="button secondary" type="button">Descargar ejemplo CSV</button>
-          <form id="reports-import-form" class="form-stack">
-            <label>Archivo CSV<input id="reports-file" type="file" accept=".csv,text/csv" required></label>
-            <button class="button secondary" type="submit">Validar y ver vista previa</button>
-          </form>
-          <p id="reports-import-status" role="status"></p>
-          <div id="reports-preview" hidden>
-            <table><thead><tr><th>Tipo</th><th>Categoría</th><th>Descripción</th></tr></thead><tbody id="reports-preview-rows"></tbody></table>
-            <button id="reports-confirm" class="button primary" type="button" disabled>Confirmar importación</button>
+
+        <section class="reports-section" aria-labelledby="reports-states-title">
+          <h2 id="reports-states-title">Distribución por estado</h2>
+          <p class="muted">Cantidades actuales de toda la base de datos, agrupadas por módulo.</p>
+          <div class="reports-states">
+            <article class="reports-panel">
+              <header><h3>Inventario</h3><p>Estado de las unidades físicas</p></header>
+              <ul id="reports-inventory" class="reports-list"></ul>
+            </article>
+            <article class="reports-panel">
+              <header><h3>Reservas</h3><p>Seguimiento de las solicitudes</p></header>
+              <ul id="reports-reservations" class="reports-list"></ul>
+            </article>
+            <article class="reports-panel">
+              <header><h3>Préstamos</h3><p>Entregas y devoluciones</p></header>
+              <ul id="reports-loans" class="reports-list"></ul>
+            </article>
           </div>
         </section>
       </section>
