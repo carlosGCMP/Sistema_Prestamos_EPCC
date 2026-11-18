@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from starlette.requests import Request
 
 from app.application.basic_use_cases import (
@@ -60,6 +60,7 @@ from app.infrastructure.models import (
     PersonState,
     PhysicalUnit,
     Reservation,
+    Solicitante,
     UnitState,
 )
 
@@ -225,7 +226,10 @@ def list_reservations(
     session: SessionDep,
     limit: int = Query(default=100, ge=1, le=500),
 ) -> list[Reservation]:
-    statement = select(Reservation)
+    # Traer los nombres junto con las reservas evita consultar cada persona por separado.
+    statement = select(Reservation).options(
+        joinedload(Reservation.applicant).joinedload(Solicitante.person)
+    )
     if not actor.is_admin:
         if actor.applicant is None:
             return []

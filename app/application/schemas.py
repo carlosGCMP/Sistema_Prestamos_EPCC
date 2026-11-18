@@ -231,6 +231,7 @@ class ReservationDecision(BaseModel):
 class ReservationOut(ORMModel):
     id: Id
     applicant_id: Id
+    applicant_name: str
     unit_id: Id
     starts_at: datetime
     ends_at: datetime

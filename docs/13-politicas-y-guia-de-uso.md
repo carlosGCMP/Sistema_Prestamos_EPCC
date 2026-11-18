@@ -98,6 +98,10 @@ ser posterior a la fecha de inicio. El inventario se registra en este orden:
 3. Un administrador confirma o rechaza.
 4. Al confirmar se crea también el registro de reserva y se guarda la política usada.
 
+En la tabla administrativa, **Quién solicita** muestra los nombres y apellidos
+de la persona, no su número interno. El identificador sigue usándose en la API
+para relacionar los registros, sin añadir columnas a la base.
+
 ### Préstamos
 
 1. Un administrador elige una reserva confirmada cuyo horario esté vigente.

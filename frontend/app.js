@@ -3,6 +3,7 @@ import { crearModulos } from "./modulos.js";
 
 const API = "";
 const tokenKey = "epcc_access_token";
+const activeViewKey = "epcc_active_view";
 const roleNames = {
   ESTUDIANTE: "Estudiante",
   DOCENTE: "Docente",
@@ -207,12 +208,14 @@ function showDashboard(person) {
     element.hidden = !requester;
   });
   document.querySelector("#reservations-heading").textContent = isAdmin() ? "Todas las reservas" : "Mis reservas";
-  activateView("inventory-view", false);
+  const savedView = sessionStorage.getItem(activeViewKey) || "inventory-view";
+  activateView(savedView, false);
   loadDashboard().catch((error) => showToast(error.message, true));
 }
 
 function showLogin(error = "") {
   currentPerson = null;
+  sessionStorage.removeItem(activeViewKey);
   appView.hidden = true;
   loginView.hidden = false;
   const message = document.querySelector("#login-error");
@@ -233,6 +236,10 @@ async function logout(sendRequest = true) {
 }
 
 function activateView(viewId, cargar = true) {
+  const menu = [...document.querySelectorAll(".nav-link")].find((button) => button.dataset.view === viewId);
+  // Una vista guardada puede dejar de existir o no estar permitida para esta cuenta.
+  if (!menu || menu.hidden || menu.disabled) viewId = "inventory-view";
+  sessionStorage.setItem(activeViewKey, viewId);
   document.querySelectorAll(".page-view").forEach((view) => { view.hidden = view.id !== viewId; });
   document.querySelectorAll(".nav-link").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === viewId);
@@ -254,6 +261,7 @@ async function loadDashboard() {
   await modulos.cargarPoliticas();
   await modulos.cargarPrestamos();
   if (isAdmin()) await modulos.cargarAcademico();
+  if (isAdmin() && !document.querySelector("#reports-view").hidden) await reportes.cargar();
 }
 
 let inventoryCache = { categories: [], types: [], items: [], units: [] };
@@ -328,7 +336,7 @@ async function loadReservations() {
     const row = document.createElement("tr");
     const unit = inventoryCache.units.find((entry) => entry.id === reservation.unit_id);
     makeCell(row, unit?.inventory_code || reservation.unit_id);
-    if (isAdmin()) makeCell(row, reservation.applicant_id);
+    if (isAdmin()) makeCell(row, reservation.applicant_name);
     makeCell(row, dateLabel(reservation.starts_at));
     makeCell(row, dateLabel(reservation.ends_at));
     makeCell(row, reservation.intended_use);

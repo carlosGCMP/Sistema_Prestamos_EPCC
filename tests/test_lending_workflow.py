@@ -36,10 +36,14 @@ def test_reservar_confirmar_cancelar_y_conservar_relaciones_sql(
     assert respuesta.status_code == 201, respuesta.text
     reserva = respuesta.json()
     assert reserva["applicant_id"] == flujo_basico["solicitante"]
+    assert reserva["applicant_name"] == "Luis Estudiante"
+    listado = client.get("/reservations", headers=admin).json()
+    assert listado[0]["applicant_name"] == "Luis Estudiante"
     confirmada = client.post(
         f"/reservations/{reserva['id']}/decision", headers=admin, json={"confirm": True}
     )
     assert confirmada.status_code == 200, confirmada.text
+    assert confirmada.json()["applicant_name"] == "Luis Estudiante"
     with session_factory() as sesion:
         registro = sesion.scalar(
             select(RegistroDeReserva).where(RegistroDeReserva.id_solicitud == int(reserva["id"]))
@@ -54,6 +58,7 @@ def test_reservar_confirmar_cancelar_y_conservar_relaciones_sql(
         assert persona.student_profile.applicant_id == int(flujo_basico["solicitante"])
     cancelada = client.post(f"/reservations/{reserva['id']}/cancel", headers=estudiante)
     assert cancelada.status_code == 200, cancelada.text
+    assert cancelada.json()["applicant_name"] == "Luis Estudiante"
     with session_factory() as sesion:
         assert sesion.scalar(select(RegistroDeReserva.estado)) == "CANCELADA"
     assert (

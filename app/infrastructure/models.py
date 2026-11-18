@@ -457,6 +457,12 @@ class Reservation(Base):
     created_at: Mapped[datetime] = mapped_column(
         "fecha_solicitud", UTCDateTime(), server_default=func.now()
     )
+    applicant: Mapped[Solicitante] = relationship()
+
+    @property
+    def applicant_name(self) -> str:
+        """Nombre de presentación; los vínculos siguen utilizando sus identificadores."""
+        return self.applicant.person.full_name
 
 
 class Loan(Base):

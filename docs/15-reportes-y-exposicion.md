@@ -72,6 +72,9 @@ todavía se puede registrar mediante los formularios normales de Inventario.
 
 No hay exportación PDF/Excel, filtros por fechas ni actualización automática.
 Los datos se consultan al abrir la sección o pulsar el botón.
+Al recargar la página se conserva el módulo abierto y se vuelven a consultar
+sus datos. La selección se guarda en `sessionStorage` y se borra al cerrar sesión;
+si el módulo guardado ya no está permitido, se vuelve a Inventario.
 
 ## Guion breve
 
