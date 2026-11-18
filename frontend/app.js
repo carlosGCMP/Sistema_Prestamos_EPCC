@@ -1,3 +1,4 @@
+import { crearReportes } from "./reportes.js";
 import { crearModulos } from "./modulos.js";
 
 const API = "";
@@ -220,6 +221,7 @@ function showLogin(error = "") {
   document.querySelectorAll(".modal").forEach((modal) => { modal.hidden = true; });
   document.querySelectorAll("tbody").forEach((body) => body.replaceChildren());
   modulos.limpiar();
+  reportes.limpiar();
 }
 
 async function logout(sendRequest = true) {
@@ -236,6 +238,7 @@ function activateView(viewId, cargar = true) {
     button.classList.toggle("active", button.dataset.view === viewId);
   });
   if (!cargar) return;
+  if (viewId === "reports-view") reportes.cargar().catch((error) => showToast(error.message, true));
   if (viewId === "people-view") loadPeople().catch((error) => showToast(error.message, true));
   if (viewId === "reservations-view") loadReservations().catch((error) => showToast(error.message, true));
   if (viewId === "inventory-view") loadInventory().catch((error) => showToast(error.message, true));
@@ -615,6 +618,7 @@ async function verificarConexion() {
 
 const modulos = crearModulos({ request, showToast, submitJsonForm, fillSelect, makeCell,
   dateLabel, isAdmin, getCatalogo: () => inventoryCache, refrescar: loadDashboard });
+const reportes = crearReportes({ request, showToast, isAdmin, makeCell, refrescar: loadDashboard });
 verificarConexion();
 window.setInterval(verificarConexion, 15000);
 window.addEventListener("offline", () => estadoConexion(false));

@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
 from app.api.modulos import router as modulos_router
+from app.api.reportes import router as reportes_router
 from app.api.routes import install_error_handlers, router
 from app.infrastructure.database import inicializar_base_datos
 
@@ -36,6 +37,7 @@ app = FastAPI(
 )
 app.include_router(router)
 app.include_router(modulos_router)
+app.include_router(reportes_router)
 install_error_handlers(app)
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 
